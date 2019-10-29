@@ -1,3 +1,5 @@
+import os
+import logging
 from Bio import SeqIO
 import json  
 import pandas as pd
@@ -18,21 +20,21 @@ class Annotator():
         self.closest_accession = closest_accession
         
     def load_reference_info(self, filepath):
-        # tests:
-        # what if no file
-        # simple case check
-        # expected attributes (reference,sequence), (genes,(start,end,strand))
+        if not os.path.exists(filepath):
+            logging.error("Reference filepath %s does not exist!" %filepath)
         with open(filepath) as json_file:
             data = json.load(json_file)
+        assert('references' in data.keys())
+        assert(self.closest_accession in data['references'].keys())
+        assert('sequence' in data['references'][self.closest_accession].keys())
+        assert('orf' in data['references'][self.closest_accession].keys())
         return data
         
     def load_consensus_sequence(self, filepath, filetype="fasta"):
-        # tests:
-        # what if no file
-        # what if file wrong format
-        # simple case check
-        #record_dict = SeqIO.to_dict(SeqIO.parse(filepath, filetype))
+        if not os.path.exists(filepath):
+            logging.error("Reference filepath %s does not exist!" %filepath)
         records = list(SeqIO.parse(filepath, filetype))
+        assert(len(records) > 0)
         return records
     
     def load_input_files(self, consensus_filepath, reference_filepath, edit_filepath = ""):
