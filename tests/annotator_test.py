@@ -40,3 +40,9 @@ class TestAnnotator(unittest.TestCase):
         a = annotator.Annotator("accession")
         self.assertRaises(TypeError, a.load_reference_info(ref_filepath))
 
+    def load_reference_info_correct_accession(self):
+        ref_filepath = os.path.join(data_dir, 'missing_accession_ref.json')
+
+        a = annotator.Annotator("LN854563.1")
+        a.load_reference_info(ref_filepath)
+        self.assertIsNotNone(a.reference_info)
