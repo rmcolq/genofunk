@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from genofunk import annotator, editfile
 
@@ -12,11 +13,12 @@ def run(options):
         log_level = logging.INFO
         msg = "Using info logging"
 
-    log_file = f"annotator.log"
-    if os.path.exists(log_file):
-        os.unlink(log_file)
+    #log_file = f"annotator.log"
+    #if os.path.exists(log_file):
+    #    os.unlink(log_file)
     logging.basicConfig(
-        filename=log_file,
+        #filename=log_file,
+        stream=sys.stdout,
         level=log_level,
         format="%(asctime)s %(message)s",
         datefmt="%d/%m/%Y %I:%M:%S",
