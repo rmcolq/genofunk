@@ -450,4 +450,4 @@ class TestAnnotator(unittest.TestCase):
         self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
-        self.assertEquals(len(self.a.edits.edits),3)
+        self.assertEquals(len(self.a.edits.edits),2)

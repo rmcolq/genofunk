@@ -259,7 +259,6 @@ class Annotator():
         cigar_length = self.cigar_length(cigar_pairs)
         e = Edit(record_id, found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
                  orf_coordinates[0] + 3 * (cigar_length))
-        print(self.get_query_sequence(record_id, coordinates=found_coordinates, amino_acid=False))
         e.apply_edit(self.consensus_sequence[record_id])
         coordinate_difference = len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + coordinate_difference]
@@ -267,12 +266,6 @@ class Annotator():
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
-
-        print(ref_sequence)
-        print(self.get_query_sequence(record_id, coordinates=found_coordinates))
-        print(self.get_query_sequence(record_id, coordinates=updated_found_coordinates))
-
-        print(self.get_query_sequence(record_id, coordinates=updated_found_coordinates, amino_acid=False))
 
         if self.is_improved_cigar_prefix(cigar_pairs, new_cigar_pairs):
             logging.debug("Keep frame shift as improvement")
