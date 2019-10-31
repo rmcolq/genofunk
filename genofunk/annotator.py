@@ -37,7 +37,7 @@ class Annotator():
         assert(len(records) > 0)
         return records
     
-    def load_input_files(self, consensus_filepath, reference_filepath, edit_filepath = ""):
+    def load_input_files(self, reference_filepath, consensus_filepath, edit_filepath = ""):
         # tests:
         # filepath doesn't exist
         # filepath does exist
@@ -188,7 +188,7 @@ class Annotator():
             return found_coordinates, cigar_length, updated
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
-        self.load_input_files(consensus_sequence_filepath, reference_info_filepath, edit_filepath)
+        self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         print(self.reference_info["references"][self.closest_accession]["orf"])
         for key, value in self.reference_info["references"][self.closest_accession]["orf"].items():
             print(key,value)
