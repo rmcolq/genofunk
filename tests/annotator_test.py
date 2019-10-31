@@ -11,6 +11,12 @@ this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(this_dir, 'tests', 'data', 'annotator')
 
 class TestAnnotator(unittest.TestCase):
+    def setUp(self):
+        ref_filepath = os.path.join(data_dir, 'ref.json')
+        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
+        self.a = annotator.Annotator("LN854563.1")
+        self.a.load_input_files(ref_filepath, consensus_filepath)
+
     def test_load_reference_info_no_file(self):
         ref_filepath = os.path.join(data_dir, 'idontexist.json')
         a = annotator.Annotator("accession")
@@ -71,13 +77,10 @@ class TestAnnotator(unittest.TestCase):
                                          "attggattacccatacccatgaagaaaacgatagcttttggcgcatgagctaa")
 
     def test_load_input_files(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
-        self.assertIsNotNone(a.reference_info)
-        self.assertIsNotNone(a.consensus_sequence)
-        self.assertIsNotNone(a.edits)
+
+        self.assertIsNotNone(self.a.reference_info)
+        self.assertIsNotNone(self.a.consensus_sequence)
+        self.assertIsNotNone(self.a.edits)
 
     def test_get_sequence_not_Seq(self):
         seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
@@ -133,38 +136,22 @@ class TestAnnotator(unittest.TestCase):
         self.assertEquals(expected, result)
 
     def test_get_reference_sequence_no_accession(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
-        result = a.get_reference_sequence()
+        result = self.a.get_reference_sequence()
         expected ="MINAHLEINTHEGRNDTHERELIVEDAHIT*NTANASTYDIRTYWETHLEFILLEDWITHTHEENDSFWRMS*"
         self.assertEquals(expected, result)
 
-    def test_get_reference_sequence_no_accession(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
-        result = a.get_reference_sequence(accession="test")
+    def test_get_reference_sequence_accession(self):
+        result = self.a.get_reference_sequence(accession="test")
         expected = "MPKLNSVEGFSSFEDDV*"
         self.assertEquals(expected, result)
 
     def test_get_query_sequence_no_id(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
-        result = a.get_query_sequence(amino_acid=False)
+        result = self.a.get_query_sequence(amino_acid=False)
         expected = "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa"
         self.assertEquals(expected, result)
 
     def test_get_query_sequence_id_1(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
-        result = a.get_query_sequence(record_id=1, amino_acid=False)
+        result = self.a.get_query_sequence(record_id=1, amino_acid=False)
         expected = "aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccat" \
                    "gaagaaaacgatagcttttggcgcatgagctaa"
         self.assertEquals(expected, result)
@@ -270,18 +257,14 @@ class TestAnnotator(unittest.TestCase):
         self.assertEquals(result.read_end1, 56)
 
     def test_frame_shift_insert_n_sticks(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 2
-        ref_sequence = a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 12)]
         shift_from = ""
         shift_to = "N"
-        (result_found_coordinates, result_cigar_pairs, result_updated) = a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -294,18 +277,14 @@ class TestAnnotator(unittest.TestCase):
         self.assertEquals(result_updated, True)
 
     def test_frame_shift_insert_n_rejected_worse(self):
-        ref_filepath = os.path.join(data_dir, 'ref.json')
-        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("LN854563.1")
-        a.load_input_files(ref_filepath, consensus_filepath)
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 2
-        ref_sequence = a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 14)]
         shift_from = ""
         shift_to = "N"
-        (result_found_coordinates, result_cigar_pairs, result_updated) = a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -316,3 +295,159 @@ class TestAnnotator(unittest.TestCase):
         self.assertEquals(result_found_coordinates[1], found_coordinates[1])
         self.assertEquals(result_cigar_pairs, cigar_pairs)
         self.assertEquals(result_updated, False)
+
+    def test_frame_shift_insert_nn_sticks(self):
+        orf_coordinates = (3,93)
+        found_coordinates = (0,90)
+        record_id = 3
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+
+        query_sequence = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
+        result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = self.a.parse_cigar(result)
+        print(cigar_pairs)
+
+        cigar_pairs = [("=", 20)]
+        shift_from = ""
+        shift_to = "NN"
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+                                                                                        found_coordinates,
+                                                                                        record_id,
+                                                                                        ref_sequence,
+                                                                                        cigar_pairs,
+                                                                                        shift_from,
+                                                                                        shift_to)
+        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
+        self.assertEquals(result_found_coordinates[1], found_coordinates[1]+2)
+        self.assertEquals(result_cigar_pairs, [("=", 20), ("X", 1), ("=", 9)])
+        self.assertEquals(result_updated, True)
+
+    def test_frame_shift_insert_nn_rejected_worse(self):
+        orf_coordinates = (3,93)
+        found_coordinates = (0,90)
+        record_id = 3
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        cigar_pairs = [("=", 21)]
+        shift_from = ""
+        shift_to = "NN"
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+                                                                                        found_coordinates,
+                                                                                        record_id,
+                                                                                        ref_sequence,
+                                                                                        cigar_pairs,
+                                                                                        shift_from,
+                                                                                        shift_to)
+        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
+        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
+        self.assertEquals(result_cigar_pairs, cigar_pairs)
+        self.assertEquals(result_updated, False)
+
+    def test_frame_shift_delete_n_sticks(self):
+        orf_coordinates = (3,93)
+        found_coordinates = (0,90)
+        record_id = 4
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+
+        query_sequence = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
+        result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = self.a.parse_cigar(result)
+        print(cigar_pairs)
+
+        cigar_pairs = [("=", 7)]
+        shift_from = "N"
+        shift_to = ""
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+                                                                                        found_coordinates,
+                                                                                        record_id,
+                                                                                        ref_sequence,
+                                                                                        cigar_pairs,
+                                                                                        shift_from,
+                                                                                        shift_to)
+        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
+        self.assertEquals(result_found_coordinates[1], found_coordinates[1]-1)
+        self.assertEquals(self.a.cigar_length(result_cigar_pairs),29)
+        self.assertEquals(result_updated, True)
+
+    def test_frame_shift_delete_n_rejected_worse(self):
+        orf_coordinates = (3,93)
+        found_coordinates = (0,90)
+        record_id = 4
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        cigar_pairs = [("=", 9)]
+        shift_from = "N"
+        shift_to = ""
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+                                                                                        found_coordinates,
+                                                                                        record_id,
+                                                                                        ref_sequence,
+                                                                                        cigar_pairs,
+                                                                                        shift_from,
+                                                                                        shift_to)
+        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
+        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
+        self.assertEquals(result_cigar_pairs, cigar_pairs)
+        self.assertEquals(result_updated, False)
+
+    def test_frame_shift_delete_nn_sticks(self):
+        orf_coordinates = (3,93)
+        found_coordinates = (0,90)
+        record_id = 5
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+
+        query_sequence = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
+        result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = self.a.parse_cigar(result)
+        print(cigar_pairs)
+
+        cigar_pairs = [("=", 12)]
+        shift_from = "NN"
+        shift_to = ""
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+                                                                                        found_coordinates,
+                                                                                        record_id,
+                                                                                        ref_sequence,
+                                                                                        cigar_pairs,
+                                                                                        shift_from,
+                                                                                        shift_to)
+        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
+        self.assertEquals(result_found_coordinates[1], found_coordinates[1]-2)
+        self.assertEquals(self.a.cigar_length(result_cigar_pairs),29)
+        self.assertEquals(result_updated, True)
+
+    def test_frame_shift_delete_nn_rejected_worse(self):
+        orf_coordinates = (3,93)
+        found_coordinates = (0,90)
+        record_id = 5
+        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        cigar_pairs = [("=", 13)]
+        shift_from = "NN"
+        shift_to = ""
+        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+                                                                                        found_coordinates,
+                                                                                        record_id,
+                                                                                        ref_sequence,
+                                                                                        cigar_pairs,
+                                                                                        shift_from,
+                                                                                        shift_to)
+        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
+        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
+        self.assertEquals(result_cigar_pairs, cigar_pairs)
+        self.assertEquals(result_updated, False)
+
+    def test_discover_edits_mismatches_no_edits(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        record_id = 6
+        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+
+        print(self.a.edits.edits)
+        self.assertEquals(len(self.a.edits.edits),0)
+
+    def test_discover_edits_mismatch_insertion_deletion_mismatch(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        record_id = 7
+        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+
+        print(self.a.edits.edits)
+        self.assertEquals(len(self.a.edits.edits),3)

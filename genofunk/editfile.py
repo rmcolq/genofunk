@@ -20,7 +20,7 @@ class Edit():
         if self.edit_from == "N":
             self.edit_from = sequence[self.sequence_position]
         elif self.edit_from == "NN":
-            self.edit_from = sequence[self.sequence_position:self.sequence_position+1]
+            self.edit_from = sequence[self.sequence_position:self.sequence_position+2]
         assert(sequence[self.sequence_position:self.sequence_position + len(self.edit_from)] == self.edit_from)
         updated_sequence = sequence[:self.sequence_position] 
         updated_sequence += self.edit_to 
