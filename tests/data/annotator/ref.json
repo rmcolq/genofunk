@@ -1,0 +1,32 @@
+{
+  "references":
+  {
+    "LN854563.1":
+    {
+      "accession": "LN854563.1",
+      "description": "Norovirus GI/Hu/NL/2011/GI.4/Groningen, complete genome",
+      "orf":
+      {
+        "ORF1":
+        {
+          "start": 3,
+          "end": 93,
+          "strand": 1
+        },
+        "ORF2":
+        {
+          "start": 93,
+          "end": 219,
+          "strand": 1
+        }
+      },
+      "sequence": "atgattaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaaaacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccatgaagaaaacgatagcttttggcgcatgagctaa"
+    },
+
+    "test":
+    {
+      "accession": "test",
+      "sequence" : "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
+    }
+  }
+}
