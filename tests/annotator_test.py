@@ -70,10 +70,10 @@ class TestAnnotator(unittest.TestCase):
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
         a = annotator.Annotator("accession")
         records = a.load_consensus_sequence(consensus_filepath)
-        self.assertEquals(len(records), 8)
-        self.assertEquals(records[0].seq, "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaa"
+        self.assertEqual(len(records), 8)
+        self.assertEqual(records[0].seq, "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaa"
                                           "gatgcgcatattacctaa")
-        self.assertEquals(records[1].seq,"aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaag"
+        self.assertEqual(records[1].seq,"aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaag"
                                          "attggattacccatacccatgaagaaaacgatagcttttggcgcatgagctaa")
 
     def test_load_input_files(self):
@@ -91,70 +91,70 @@ class TestAnnotator(unittest.TestCase):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq, amino_acid=False)
-        self.assertEquals(seq, result)
+        self.assertEqual(seq, result)
 
     def test_get_sequence_coordinates_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq, coordinates=(0,12), amino_acid=False)
         expected = "atgcccaagctg"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_sequence_offset_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq, offset=3, amino_acid=False)
         expected = "cccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_sequence_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDV*"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_sequence_coordinates_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq, coordinates=(0,48))
         expected = "MPKLNSVEGFSSFEDD"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_1(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtat")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_2(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtata")
         a = annotator.Annotator("LN854563.1")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_reference_sequence_no_accession(self):
         result = self.a.get_reference_sequence()
         expected ="MINAHLEINTHEGRNDTHERELIVEDAHIT*NTANASTYDIRTYWETHLEFILLEDWITHTHEENDSFWRMS*"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_reference_sequence_accession(self):
         result = self.a.get_reference_sequence(accession="test")
         expected = "MPKLNSVEGFSSFEDDV*"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_query_sequence_no_id(self):
         result = self.a.get_query_sequence(amino_acid=False)
         expected = "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     def test_get_query_sequence_id_1(self):
         result = self.a.get_query_sequence(record_id=1, amino_acid=False)
         expected = "aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccat" \
                    "gaagaaaacgatagcttttggcgcatgagctaa"
-        self.assertEquals(expected, result)
+        self.assertEqual(expected, result)
 
     # No tests for decode_cigar
 
@@ -163,8 +163,8 @@ class TestAnnotator(unittest.TestCase):
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
         a = annotator.Annotator()
         result = a.pairwise_ssw_align(ref_seq, query_seq)
-        self.assertEquals(3,result.read_begin1)
-        self.assertEquals(result.read_end1, 56)
+        self.assertEqual(3,result.read_begin1)
+        self.assertEqual(result.read_end1, 56)
         print(result)
 
     def test_pairwise_sw_trace_align(self):
@@ -172,7 +172,7 @@ class TestAnnotator(unittest.TestCase):
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
         a = annotator.Annotator()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
-        self.assertEquals(b'8=1X7=1X6=1D9=1X10=1I10=',result.cigar.decode)
+        self.assertEqual(b'8=1X7=1X6=1D9=1X10=1I10=',result.cigar.decode)
 
     def test_parse_cigar(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
@@ -181,7 +181,7 @@ class TestAnnotator(unittest.TestCase):
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         parsed_cigar = a.parse_cigar(result)
         expected = [("=",8), ("X",1), ("=",7), ("X",1), ("=",6), ("D",1), ("=",9), ("X",1), ("=",10), ("I",1), ("=",10)]
-        self.assertEquals(expected, parsed_cigar)
+        self.assertEqual(expected, parsed_cigar)
 
     def test_cigar_length(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
@@ -191,7 +191,7 @@ class TestAnnotator(unittest.TestCase):
         pairs = a.parse_cigar(result)
         cigar_length = a.cigar_length(pairs)
         expected = 23
-        self.assertEquals(expected, cigar_length)
+        self.assertEqual(expected, cigar_length)
 
     def test_is_improved_cigar_prefix(self):
         a = annotator.Annotator()
@@ -202,59 +202,59 @@ class TestAnnotator(unittest.TestCase):
         c5 = [("=", 12), ("D", 1), ("=", 17)]
         c6 = [("=", 12)]
 
-        self.assertEquals(a.is_improved_cigar_prefix(c1, c1), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c2, c2), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c3, c3), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c4, c4), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c5), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c6, c6), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c1), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c3, c3), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c4), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c6, c6), False)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c1,c2), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c2, c1), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c1,c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c1), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c1, c3), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c3, c1), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c3), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c3, c1), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c1, c4), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c4, c1), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c4), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c1), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c1, c5), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c1), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c1), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c1, c5), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c1), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c1), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c6, c1), True)
-        self.assertEquals(a.is_improved_cigar_prefix(c1, c6), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c6, c1), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c6), False)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c4, c2), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c2, c4), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c4), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c2), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c2, c5), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c5), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c6, c2), False) # funny case, prefix is better, overall is worse
-        self.assertEquals(a.is_improved_cigar_prefix(c2, c6), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c6, c2), False) # funny case, prefix is better, overall is worse
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c6), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c3, c4), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c4, c3), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c3, c4), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c3), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c3, c5), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c3), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c3, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c3), True)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c6, c5), True)
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c6), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c6, c5), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c6), False)
 
-        self.assertEquals(a.is_improved_cigar_prefix(c4, c5), False)
-        self.assertEquals(a.is_improved_cigar_prefix(c5, c4), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c4), False)
 
     def test_identify_orf_coordinates(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
         a = annotator.Annotator()
         result = a.pairwise_ssw_align(ref_seq, query_seq)
-        self.assertEquals(3, result.read_begin1)
-        self.assertEquals(result.read_end1, 56)
+        self.assertEqual(3, result.read_begin1)
+        self.assertEqual(result.read_end1, 56)
 
     def test_frame_shift_insert_n_sticks(self):
         orf_coordinates = (3,93)
@@ -271,10 +271,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1]+1)
-        self.assertEquals(result_cigar_pairs, [("=", 12), ("X", 1), ("=", 17)])
-        self.assertEquals(result_updated, True)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1]+1)
+        self.assertEqual(result_cigar_pairs, [("=", 12), ("X", 1), ("=", 17)])
+        self.assertEqual(result_updated, True)
 
     def test_frame_shift_insert_n_rejected_worse(self):
         orf_coordinates = (3,93)
@@ -291,10 +291,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
-        self.assertEquals(result_cigar_pairs, cigar_pairs)
-        self.assertEquals(result_updated, False)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1])
+        self.assertEqual(result_cigar_pairs, cigar_pairs)
+        self.assertEqual(result_updated, False)
 
     def test_frame_shift_insert_nn_sticks(self):
         orf_coordinates = (3,93)
@@ -317,10 +317,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1]+2)
-        self.assertEquals(result_cigar_pairs, [("=", 20), ("X", 1), ("=", 9)])
-        self.assertEquals(result_updated, True)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1]+2)
+        self.assertEqual(result_cigar_pairs, [("=", 20), ("X", 1), ("=", 9)])
+        self.assertEqual(result_updated, True)
 
     def test_frame_shift_insert_nn_rejected_worse(self):
         orf_coordinates = (3,93)
@@ -337,10 +337,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
-        self.assertEquals(result_cigar_pairs, cigar_pairs)
-        self.assertEquals(result_updated, False)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1])
+        self.assertEqual(result_cigar_pairs, cigar_pairs)
+        self.assertEqual(result_updated, False)
 
     def test_frame_shift_delete_n_sticks(self):
         orf_coordinates = (3,93)
@@ -363,10 +363,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1]-1)
-        self.assertEquals(self.a.cigar_length(result_cigar_pairs),29)
-        self.assertEquals(result_updated, True)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1]-1)
+        self.assertEqual(self.a.cigar_length(result_cigar_pairs),29)
+        self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_n_rejected_worse(self):
         orf_coordinates = (3,93)
@@ -383,10 +383,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
-        self.assertEquals(result_cigar_pairs, cigar_pairs)
-        self.assertEquals(result_updated, False)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1])
+        self.assertEqual(result_cigar_pairs, cigar_pairs)
+        self.assertEqual(result_updated, False)
 
     def test_frame_shift_delete_nn_sticks(self):
         orf_coordinates = (3,93)
@@ -409,10 +409,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1]-2)
-        self.assertEquals(self.a.cigar_length(result_cigar_pairs),29)
-        self.assertEquals(result_updated, True)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1]-2)
+        self.assertEqual(self.a.cigar_length(result_cigar_pairs),29)
+        self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_nn_rejected_worse(self):
         orf_coordinates = (3,93)
@@ -429,10 +429,10 @@ class TestAnnotator(unittest.TestCase):
                                                                                         cigar_pairs,
                                                                                         shift_from,
                                                                                         shift_to)
-        self.assertEquals(result_found_coordinates[0], found_coordinates[0])
-        self.assertEquals(result_found_coordinates[1], found_coordinates[1])
-        self.assertEquals(result_cigar_pairs, cigar_pairs)
-        self.assertEquals(result_updated, False)
+        self.assertEqual(result_found_coordinates[0], found_coordinates[0])
+        self.assertEqual(result_found_coordinates[1], found_coordinates[1])
+        self.assertEqual(result_cigar_pairs, cigar_pairs)
+        self.assertEqual(result_updated, False)
 
     def test_discover_edits_mismatches_no_edits(self):
         orf_coordinates = (3, 93)
@@ -441,7 +441,7 @@ class TestAnnotator(unittest.TestCase):
         self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
-        self.assertEquals(len(self.a.edits.edits),0)
+        self.assertEqual(len(self.a.edits.edits),0)
 
     def test_discover_edits_mismatch_insertion_deletion_mismatch(self):
         orf_coordinates = (3, 93)
@@ -450,4 +450,4 @@ class TestAnnotator(unittest.TestCase):
         self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
-        self.assertEquals(len(self.a.edits.edits),2)
+        self.assertEqual(len(self.a.edits.edits),2)
