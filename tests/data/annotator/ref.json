@@ -1,10 +1,10 @@
 {
   "references":
   {
-    "LN854563.1":
+    "hobbit":
     {
-      "accession": "LN854563.1",
-      "description": "Norovirus GI/Hu/NL/2011/GI.4/Groningen, complete genome",
+      "accession": "hobbit",
+      "description": "Small creature",
       "orf":
       {
         "ORF1":

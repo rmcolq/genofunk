@@ -266,16 +266,41 @@ class Annotator():
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
+        e.remove_edit(self.consensus_sequence[record_id])
 
         if self.is_improved_cigar_prefix(cigar_pairs, new_cigar_pairs):
             logging.debug("Keep frame shift as improvement")
             updated = True
-            self.edits.add_edit(e)
-            return updated_found_coordinates, new_cigar_pairs, updated
+            return updated_found_coordinates, new_cigar_pairs, updated, e
         else:
             logging.debug("Reject frame shift")
-            e.remove_edit(self.consensus_sequence[record_id])
-            return found_coordinates, cigar_pairs, updated
+            return found_coordinates, cigar_pairs, updated, e
+
+    def choose_best_frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs):
+
+        shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
+        frame_shift_results = []
+        for shift_from, shift_to in shifts:
+            result = self.frame_shift(orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
+                                      shift_from, shift_to)
+            if result[2]:
+                frame_shift_results.append(result)
+
+        if len(frame_shift_results) == 0:
+            return found_coordinates, cigar_pairs, False
+
+        logging.debug("Choose winning shift")
+        best = 0
+        for i,result in enumerate(frame_shift_results):
+            if self.is_improved_cigar_prefix(frame_shift_results[best][1], result[1]):
+                best = i
+                logging.debug("Override best with %d" %i)
+
+        found_coordinates, cigar_pairs, updated, edit = frame_shift_results[best]
+        edit.apply_edit(self.consensus_sequence[record_id])
+        self.edits.add_edit(edit)
+
+        return found_coordinates, cigar_pairs, updated
     
     def discover_edits(self, orf_coordinates, found_coordinates, record_id=0):
         ref_sequence = self.get_reference_sequence(orf_coordinates)
@@ -285,21 +310,8 @@ class Annotator():
         cigar_pairs = self.parse_cigar(result)
         while self.cigar_length(cigar_pairs) < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
-            found_coordinates, cigar_pairs, updated = self.frame_shift(orf_coordinates, found_coordinates, record_id,
-                                                                        ref_sequence, cigar_pairs, "", "N")
-
-            if not updated:
-                found_coordinates, cigar_pairs, updated = self.frame_shift(orf_coordinates, found_coordinates,
-                                                                            record_id, ref_sequence, cigar_pairs,
-                                                                            "N", "")
-            if not updated:
-                found_coordinates, cigar_pairs, updated = self.frame_shift(orf_coordinates, found_coordinates,
-                                                                            record_id, ref_sequence, cigar_pairs,
-                                                                            "", "NN")
-            if not updated:
-                found_coordinates, cigar_pairs, updated = self.frame_shift(orf_coordinates, found_coordinates,
-                                                                            record_id, ref_sequence, cigar_pairs,
-                                                                            "NN", "")
+            found_coordinates, cigar_pairs, updated = self.choose_best_frame_shift(orf_coordinates, found_coordinates,
+                                                                                   record_id, ref_sequence, cigar_pairs)
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)

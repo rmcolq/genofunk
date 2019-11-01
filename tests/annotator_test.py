@@ -14,7 +14,7 @@ class TestAnnotator(unittest.TestCase):
     def setUp(self):
         ref_filepath = os.path.join(data_dir, 'ref.json')
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        self.a = annotator.Annotator("LN854563.1")
+        self.a = annotator.Annotator("hobbit")
         self.a.load_input_files(ref_filepath, consensus_filepath)
 
     def test_load_reference_info_no_file(self):
@@ -49,7 +49,7 @@ class TestAnnotator(unittest.TestCase):
 
     def test_load_reference_info_correct_accession(self):
         ref_filepath = os.path.join(data_dir, 'ref.json')
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         data = a.load_reference_info(ref_filepath)
         print(a)
         print(a.closest_accession)
@@ -70,7 +70,7 @@ class TestAnnotator(unittest.TestCase):
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
         a = annotator.Annotator("accession")
         records = a.load_consensus_sequence(consensus_filepath)
-        self.assertEqual(len(records), 8)
+        self.assertEqual(len(records), 10)
         self.assertEqual(records[0].seq, "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaa"
                                           "gatgcgcatattacctaa")
         self.assertEqual(records[1].seq,"aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaag"
@@ -84,53 +84,53 @@ class TestAnnotator(unittest.TestCase):
 
     def test_get_sequence_not_Seq(self):
         seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         self.assertRaises(TypeError, a.get_sequence, seq)
 
     def test_get_sequence_simple_case(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq, amino_acid=False)
         self.assertEqual(seq, result)
 
     def test_get_sequence_coordinates_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq, coordinates=(0,12), amino_acid=False)
         expected = "atgcccaagctg"
         self.assertEqual(expected, result)
 
     def test_get_sequence_offset_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq, offset=3, amino_acid=False)
         expected = "cccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDV*"
         self.assertEqual(expected, result)
 
     def test_get_sequence_coordinates_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq, coordinates=(0,48))
         expected = "MPKLNSVEGFSSFEDD"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_1(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtat")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_2(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtata")
-        a = annotator.Annotator("LN854563.1")
+        a = annotator.Annotator("hobbit")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
@@ -264,7 +264,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 12)]
         shift_from = ""
         shift_to = "N"
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -284,7 +284,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 14)]
         shift_from = ""
         shift_to = "N"
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -310,7 +310,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 20)]
         shift_from = ""
         shift_to = "NN"
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -330,7 +330,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 21)]
         shift_from = ""
         shift_to = "NN"
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -356,7 +356,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 7)]
         shift_from = "N"
         shift_to = ""
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -376,7 +376,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 9)]
         shift_from = "N"
         shift_to = ""
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -402,7 +402,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 12)]
         shift_from = "NN"
         shift_to = ""
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -422,7 +422,7 @@ class TestAnnotator(unittest.TestCase):
         cigar_pairs = [("=", 13)]
         shift_from = "NN"
         shift_to = ""
-        (result_found_coordinates, result_cigar_pairs, result_updated) = self.a.frame_shift(orf_coordinates,
+        (result_found_coordinates, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record_id,
                                                                                         ref_sequence,
@@ -451,3 +451,22 @@ class TestAnnotator(unittest.TestCase):
 
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),2)
+
+    def test_discover_edits_double_deletion_mismatch_insertion(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        record_id = 8
+        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+
+        print(self.a.edits.edits)
+        self.assertEqual(len(self.a.edits.edits),2)
+
+    def test_discover_edits_3_insertions(self):
+        orf_coordinates = (93, 219)
+        found_coordinates = (0, 126)
+        record_id = 9
+        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+
+        print(self.a.edits.edits)
+        self.assertEqual(len(self.a.edits.edits),3)
+        self.assertEqual(self.a.edits.edits[0].reference_position, 116)
