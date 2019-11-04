@@ -195,6 +195,17 @@ class Annotator():
                 break
         return total
 
+    def aligned_cigar_length(self,pairs):
+        """
+        Find the number of exact match symbols in cigar
+        :param pairs:
+        :return: number
+        """
+        total = 0
+        for c,i in pairs:
+            total += i
+        return total
+
     def case(self, c):
         #helper function
         if c in ["I", "D", "N", "S", "H", "P"]:
@@ -210,6 +221,15 @@ class Annotator():
         logging.debug("Old cigar pairs %s" %old_cigar_pairs)
         logging.debug("New cigar pairs %s" %new_cigar_pairs)
 
+        # First on number of matches
+        #old_aligned_cigar_length = self.aligned_cigar_length(old_cigar_pairs)
+        #new_aligned_cigar_length = self.aligned_cigar_length(new_cigar_pairs)
+        #if old_aligned_cigar_length < new_aligned_cigar_length:
+        #    logging.debug("Comparing %s and %s and found improvement to be %s" % (old_aligned_cigar_length, new_aligned_cigar_length,
+        #                                                                          old_aligned_cigar_length < new_aligned_cigar_length))
+        #    return True
+
+        # Then on prefix comparison
         for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
             if i >= len(new_cigar_pairs):
                 return False
@@ -254,29 +274,33 @@ class Annotator():
         return result.read_begin1, result.read_end1+1
 
     def frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, shift_from,
-                    shift_to):
+                    shift_to, coordinate_difference=0):
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
         cigar_length = self.cigar_length(cigar_pairs)
-        e = Edit(record_id, found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
-                 orf_coordinates[0] + 3 * (cigar_length))
-        e.apply_edit(self.consensus_sequence[record_id])
-        coordinate_difference = len(shift_to) - len(shift_from)
-        updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + coordinate_difference]
+        print("found coordinates", found_coordinates, "cigar length", cigar_length, "orf_coordinates", orf_coordinates, "coordinate_difference", coordinate_difference)
+        print(self.get_query_sequence(record_id, coordinates=(found_coordinates[0] + 3 * (cigar_length)-10, found_coordinates[0] + 3 * (cigar_length)+10), amino_acid=False))
+        e = Edit(record_id, 1+found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
+                 1+orf_coordinates[0] + 3 * (cigar_length))
+        print(e)
+        e.apply_edit(self.consensus_sequence[record_id], -coordinate_difference)
+        updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
+        updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
         query_sequence = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
+        print(ref_sequence, query_sequence)
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
-        e.remove_edit(self.consensus_sequence[record_id])
+        e.remove_edit(self.consensus_sequence[record_id], -coordinate_difference)
 
         if self.is_improved_cigar_prefix(cigar_pairs, new_cigar_pairs):
             logging.debug("Keep frame shift as improvement")
             updated = True
-            return updated_found_coordinates, new_cigar_pairs, updated, e
+            return updated_coordinate_difference, new_cigar_pairs, updated, e
         else:
             logging.debug("Reject frame shift")
-            return found_coordinates, cigar_pairs, updated, e
+            return coordinate_difference, cigar_pairs, updated, e
 
-    def choose_best_frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs):
+    def choose_best_frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, coordinate_difference=0):
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
@@ -287,7 +311,7 @@ class Annotator():
                 frame_shift_results.append(result)
 
         if len(frame_shift_results) == 0:
-            return found_coordinates, cigar_pairs, False
+            return coordinate_difference, cigar_pairs, False
 
         logging.debug("Choose winning shift")
         best = 0
@@ -296,11 +320,11 @@ class Annotator():
                 best = i
                 logging.debug("Override best with %d" %i)
 
-        found_coordinates, cigar_pairs, updated, edit = frame_shift_results[best]
-        edit.apply_edit(self.consensus_sequence[record_id])
+        updated_coordinate_difference, cigar_pairs, updated, edit = frame_shift_results[best]
+        edit.apply_edit(self.consensus_sequence[record_id], -coordinate_difference)
         self.edits.add_edit(edit)
 
-        return found_coordinates, cigar_pairs, updated
+        return updated_coordinate_difference, cigar_pairs, updated
     
     def discover_edits(self, orf_coordinates, found_coordinates, record_id=0):
         ref_sequence = self.get_reference_sequence(orf_coordinates)
@@ -308,10 +332,16 @@ class Annotator():
         
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.parse_cigar(result)
+        coordinate_difference = 0
         while self.cigar_length(cigar_pairs) < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
-            found_coordinates, cigar_pairs, updated = self.choose_best_frame_shift(orf_coordinates, found_coordinates,
-                                                                                   record_id, ref_sequence, cigar_pairs)
+            coordinate_difference, cigar_pairs, updated = self.choose_best_frame_shift(orf_coordinates,
+                                                                                       found_coordinates,
+                                                                                       record_id,
+                                                                                       ref_sequence,
+                                                                                       cigar_pairs,
+                                                                                       coordinate_difference)
+            logging.debug("new coordinate difference is %d" %coordinate_difference)
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)
