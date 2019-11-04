@@ -21,6 +21,9 @@ class Edit():
             self.edit_from = sequence[self.sequence_position + offset]
         elif self.edit_from == "NN":
             self.edit_from = sequence[self.sequence_position + offset:self.sequence_position + offset + 2]
+
+        print(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)], self.edit_from)
+
         assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)] == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
         updated_sequence += self.edit_to 
