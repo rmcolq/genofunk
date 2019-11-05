@@ -439,14 +439,14 @@ class TestAnnotator(unittest.TestCase):
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),0)
 
-    #def test_discover_edits_mismatch_insertion_deletion_mismatch(self):
-    #    orf_coordinates = (3, 93)
-    #    found_coordinates = (0, 90)
-    #    record_id = 7
-    #    self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+    def test_discover_edits_mismatch_insertion_deletion_mismatch(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        record_id = 7
+        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
 
-    #    print(self.a.edits.edits)
-    #    self.assertEqual(len(self.a.edits.edits),2)
+        print(self.a.edits.edits)
+        self.assertEqual(len(self.a.edits.edits),2)
 
     def test_discover_edits_double_deletion_mismatch_insertion(self):
         orf_coordinates = (3, 93)
