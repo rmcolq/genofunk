@@ -1,7 +1,5 @@
-import filecmp
 import os
 import unittest
-import glob
 import json
 from Bio.Seq import Seq
 
@@ -466,28 +464,3 @@ class TestAnnotator(unittest.TestCase):
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),3)
         self.assertEqual(self.a.edits.edits[0].reference_position, 115)
-
-    def test_edit(self):
-        record_id = 8
-        original = self.a.consensus_sequence[record_id]
-        print(self.a.consensus_sequence[record_id])
-        e = Edit(record_id, 3, '', "N", "hobbit", 5)
-        e.apply_edit(self.a.consensus_sequence[record_id], 0)
-        print(self.a.consensus_sequence[record_id])
-        e.remove_edit(self.a.consensus_sequence[record_id], 0)
-        print(self.a.consensus_sequence[record_id])
-        self.assertEqual(str(original.seq), str(self.a.consensus_sequence[record_id].seq))
-
-        e = Edit(record_id, 3, '', "N", "hobbit", 5)
-        e.apply_edit(self.a.consensus_sequence[record_id], 1)
-        print(self.a.consensus_sequence[record_id])
-        e.remove_edit(self.a.consensus_sequence[record_id], 1)
-        print(self.a.consensus_sequence[record_id])
-        self.assertEqual(str(original.seq), str(self.a.consensus_sequence[record_id].seq))
-
-        e = Edit(record_id, 3, '', "N", "hobbit", 5)
-        e.apply_edit(self.a.consensus_sequence[record_id], -1)
-        print(self.a.consensus_sequence[record_id])
-        e.remove_edit(self.a.consensus_sequence[record_id], -1)
-        print(self.a.consensus_sequence[record_id])
-        self.assertEqual(str(original.seq), str(self.a.consensus_sequence[record_id].seq))

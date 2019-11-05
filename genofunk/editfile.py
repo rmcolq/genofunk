@@ -12,9 +12,7 @@ class Edit():
         
     def __repr__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
-        
-    #NB problems with ordering of edits applied if position is relative to original nucleotide sequence and
-    #edits could vary in length
+
     def apply_edit(self, record, offset=0):
         sequence = record.seq
         if self.edit_from == "N":
@@ -22,9 +20,11 @@ class Edit():
         elif self.edit_from == "NN":
             self.edit_from = sequence[self.sequence_position + offset:self.sequence_position + offset + 2]
 
-        print(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)], self.edit_from)
+        print(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)],
+              self.edit_from)
 
-        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)] == self.edit_from)
+        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
+               == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
         updated_sequence += self.edit_to 
         updated_sequence += sequence[self.sequence_position + offset + len(self.edit_from):]
@@ -36,7 +36,8 @@ class Edit():
         
     def remove_edit(self, record, offset=0):
         sequence = record.seq
-        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_to)] == self.edit_to)
+        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_to)]
+               == self.edit_to)
         updated_sequence = sequence[:self.sequence_position + offset]
         updated_sequence += self.edit_from 
         updated_sequence += sequence[self.sequence_position + offset + len(self.edit_to):]
@@ -45,7 +46,7 @@ class Edit():
         self.edit_applied = False
         
 class EditFile():
-    def __init__(self, filepath):
+    def __init__(self, filepath=None):
         self.edits = []
         if filepath:
             data = pd.read_csv(filepath)
@@ -54,7 +55,18 @@ class EditFile():
                 self.edits.append(e)
     
     def __repr__(self):
-        return  str(self.__class__) + '\n'+ '\n'.join(('{} = {}'.format(item, self.__dict__[item]) for item in self.__dict__))
+        return  str(self.__class__) + '\n'+ '\n'.join(('{} = {}'.format(item, self.__dict__[item]) for item in
+                                                       self.__dict__))
             
     def add_edit(self, edit):
         self.edits.append(edit)
+
+    def save(self, filepath):
+        with open(filepath, "w") as f:
+            header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos"])
+            f.write("%s\n" %header)
+            for e in self.edits:
+                if e.edit_applied:
+                    attributes = ','.join([str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
+                                     str(e.reference_position)])
+                    f.write("%s\n" %attributes)
