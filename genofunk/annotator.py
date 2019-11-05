@@ -179,21 +179,6 @@ class Annotator():
                 last_position = current_position+1
             current_position += 1
         return pairs
-    
-    #def cigar_length(self,pairs):
-    #    """
-    #    Find the length of aligned sequence until the first insertion/deletion/padding
-    #    :param pairs:
-    #    :return: number
-    #    """
-    #    #pairs = self.parse_cigar(result)
-    #    total = 0
-    #    for c,i in pairs:
-    #        if c in ["M","=","X"]:
-    #            total += i
-    #        elif c in ["I","D","N","S","H","P"]:
-    #            break
-    #    return total
 
     def cigar_length(self,pairs, max_mismatch = 3):
         """
@@ -246,22 +231,6 @@ class Annotator():
     def is_improved_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
         logging.debug("Old cigar pairs %s" %old_cigar_pairs)
         logging.debug("New cigar pairs %s" %new_cigar_pairs)
-
-        # First on number of matches
-        #old_cigar_score = self.cigar_score(old_cigar_pairs)
-        #new_cigar_score = self.cigar_score(new_cigar_pairs)
-        #if abs(old_cigar_score - new_cigar_score) > 0:
-        #    logging.debug("Comparing %s and %s and found improvement to be %s" % (old_cigar_score, new_cigar_score,
-        #                                                                          old_cigar_score < new_cigar_score))
-        #    return old_cigar_score < new_cigar_score
-
-        # First on number of matches
-        #old_cigar_length = self.cigar_length(old_cigar_pairs)
-        #new_cigar_length = self.cigar_length(new_cigar_pairs)
-        #if abs(old_cigar_length - new_cigar_length) > 0:
-        #    logging.debug("Comparing %s and %s and found improvement to be %s" % (old_cigar_length, new_cigar_length,
-        #                                                                          old_cigar_length < new_cigar_length))
-        #    return old_cigar_length < new_cigar_length
 
         # Then on prefix comparison
         for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
