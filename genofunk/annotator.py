@@ -211,9 +211,21 @@ class Annotator():
                 break
         return total
 
+    def cigar_has_no_indels(self,pairs):
+        """
+        Are there non-match/mismatch symbols in cigar?
+        :param pairs:
+        :return: bool
+        """
+        total = 0
+        for c,i in pairs:
+            if c in ["I", "D", "N", "S", "H", "P"]:
+                return False
+        return True
+
     def cigar_score(self,pairs, match_score=1, mismatch_score=-1, gap_score=-1):
         """
-        Find the number of exact match symbols in cigar
+        Find a custom score for cigar
         :param pairs:
         :return: number
         """
@@ -238,9 +250,36 @@ class Annotator():
         else:
             return 0
 
+    def is_extended_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
+        if len(old_cigar_pairs) > len(new_cigar_pairs):
+            return False
+
+        for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
+            if new_cigar_pairs[i] == old_cigar_pairs[i]:
+                continue
+            elif i == len(old_cigar_pairs):
+                new_c, new_c_length = new_cigar_pairs[i]
+                if new_c == old_c and old_c_length < new_c_length:
+                    return True
+            else:
+                return False
+        return len(old_cigar_pairs) < len(new_cigar_pairs)
+
     def is_improved_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
         logging.debug("Old cigar pairs %s" %old_cigar_pairs)
         logging.debug("New cigar pairs %s" %new_cigar_pairs)
+
+        # First on whether is extension
+        if self.is_extended_cigar_prefix(old_cigar_pairs, new_cigar_pairs):
+            return True
+        elif self.is_extended_cigar_prefix(new_cigar_pairs, old_cigar_pairs):
+            return False
+
+        # Second on existance of frameshift
+        if self.cigar_has_no_indels(old_cigar_pairs) and not self.cigar_has_no_indels(new_cigar_pairs):
+            return False
+        elif self.cigar_has_no_indels(new_cigar_pairs) and not self.cigar_has_no_indels(old_cigar_pairs):
+            return True
 
         # Then on prefix comparison
         for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
@@ -303,7 +342,8 @@ class Annotator():
                     shift_to, coordinate_difference=0):
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
         cigar_length = self.cigar_length(cigar_pairs)
-        e = Edit(record_id, 1+found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
+        record_name = self.consensus_sequence[record_id].id
+        e = Edit(record_name, 1+found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
                  1+orf_coordinates[0] + 3 * (cigar_length))
         e.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
@@ -374,15 +414,18 @@ class Annotator():
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found ORF: %s " %self.reference_info["references"][self.closest_accession]["orf"])
-        for key, value in self.reference_info["references"][self.closest_accession]["orf"].items():
-            logging.info("Find edits for %s, %s" %(key,value))
-            coordinates = (value["start"], value["end"])
-            query_start, query_end = self.identify_orf_coordinates(orf_coordinates=coordinates)
-            if not query_start or not query_end:
-                logging.debug("No good alignment to ORF coordinates - skip this ORF/consensus combination")
-                continue
-            logging.debug("Identified ORF coordinates (%d,%d)" % (query_start, query_end))
-            result = self.discover_edits(coordinates, (query_start, query_end))
-            logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
+
+        for record_id in range(len(self.consensus_sequence)):
+            logging.debug("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
+            for key, value in self.reference_info["references"][self.closest_accession]["orf"].items():
+                logging.info("Find edits for %s, %s" %(key,value))
+                coordinates = (value["start"], value["end"])
+                query_start, query_end = self.identify_orf_coordinates(orf_coordinates=coordinates, record_id=record_id)
+                if not query_end:
+                    logging.debug("No good alignment to ORF coordinates - skip this ORF/consensus combination")
+                    continue
+                logging.debug("Identified ORF coordinates (%d,%d)" % (query_start, query_end))
+                result = self.discover_edits(coordinates, (query_start, query_end), record_id=record_id)
+                logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
 
         self.edits.save(consensus_sequence_filepath + ".edits")

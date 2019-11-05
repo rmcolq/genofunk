@@ -20,7 +20,7 @@ class Edit():
         if self.edit_from == "N":
             self.edit_from = sequence[self.sequence_position + offset]
         elif self.edit_from == "NN":
-            self.edit_from = sequence[self.sequence_position + offset:self.sequence_position + offset + 2]
+            self.edit_from = str(sequence[self.sequence_position + offset:self.sequence_position + offset + 2])
 
         assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
                == self.edit_from)
@@ -67,6 +67,7 @@ class EditFile():
             f.write("%s\n" %header)
             for e in self.edits:
                 if e.edit_applied:
-                    attributes = ','.join([str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
-                                     str(e.reference_position)])
+                    attributes = ','.join(
+                        [str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
+                         str(e.reference_position)])
                     f.write("%s\n" %attributes)

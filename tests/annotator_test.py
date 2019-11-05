@@ -195,6 +195,49 @@ class TestAnnotator(unittest.TestCase):
         expected = 23
         self.assertEqual(expected, cigar_length)
 
+    def test_is_extended_cigar_prefix(self):
+        a = annotator.Annotator()
+        c1 = [("=", 12), ("X", 1), ("=", 17)]
+        c2 = [("=", 10), ("X", 3), ("=", 17)]
+        c3 = [("=", 12), ("X", 3), ("=", 15)]
+        c4 = [("=", 12), ("I", 1), ("=", 17)]
+        c5 = [("=", 12), ("D", 1), ("=", 17)]
+        c6 = [("=", 12)]
+
+        self.assertEqual(a.is_extended_cigar_prefix(c1, c1), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c2, c2), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c3, c3), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c4, c4), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c5, c5), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c6, c6), False)
+
+        self.assertEqual(a.is_extended_cigar_prefix(c6, c1), True)
+        self.assertEqual(a.is_extended_cigar_prefix(c6, c2), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c6, c3), True)
+        self.assertEqual(a.is_extended_cigar_prefix(c6, c4), True)
+        self.assertEqual(a.is_extended_cigar_prefix(c6, c5), True)
+
+        self.assertEqual(a.is_extended_cigar_prefix(c1, c2), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c2, c1), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c1, c3), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c3, c1), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c1, c4), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c4, c1), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c1, c5), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c5, c1), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c2, c3), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c3, c2), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c2, c4), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c4, c2), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c2, c5), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c5, c2), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c3, c4), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c4, c3), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c3, c5), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c5, c3), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c4, c5), False)
+        self.assertEqual(a.is_extended_cigar_prefix(c5, c4), False)
+
     def test_is_improved_cigar_prefix(self):
         a = annotator.Annotator()
         c1 = [("=", 12), ("X", 1), ("=", 17)]
@@ -211,44 +254,42 @@ class TestAnnotator(unittest.TestCase):
         self.assertEqual(a.is_improved_cigar_prefix(c5, c5), False)
         self.assertEqual(a.is_improved_cigar_prefix(c6, c6), False)
 
-        self.assertEqual(a.is_improved_cigar_prefix(c1,c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c1, c2), False)
         self.assertEqual(a.is_improved_cigar_prefix(c2, c1), True)
-
         self.assertEqual(a.is_improved_cigar_prefix(c1, c3), False)
         self.assertEqual(a.is_improved_cigar_prefix(c3, c1), True)
-
         self.assertEqual(a.is_improved_cigar_prefix(c1, c4), False)
         self.assertEqual(a.is_improved_cigar_prefix(c4, c1), True)
-
         self.assertEqual(a.is_improved_cigar_prefix(c1, c5), False)
         self.assertEqual(a.is_improved_cigar_prefix(c5, c1), True)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c5), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c1), True)
-
         self.assertEqual(a.is_improved_cigar_prefix(c6, c1), True)
         self.assertEqual(a.is_improved_cigar_prefix(c1, c6), False)
 
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c2), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c4), True)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c2), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c5), True)
-
+        self.assertEqual(a.is_improved_cigar_prefix(c3, c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c3), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c2), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c4), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c2), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c5), False)
         self.assertEqual(a.is_improved_cigar_prefix(c6, c2), False) # funny case, prefix is better, overall is worse
         self.assertEqual(a.is_improved_cigar_prefix(c2, c6), True)
 
         self.assertEqual(a.is_improved_cigar_prefix(c3, c4), False)
         self.assertEqual(a.is_improved_cigar_prefix(c4, c3), True)
-
         self.assertEqual(a.is_improved_cigar_prefix(c3, c5), False)
         self.assertEqual(a.is_improved_cigar_prefix(c5, c3), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c3, c6), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c6, c3), True)
+
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c4), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c6), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c6, c4), True)
 
         self.assertEqual(a.is_improved_cigar_prefix(c6, c5), True)
         self.assertEqual(a.is_improved_cigar_prefix(c5, c6), False)
 
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c5), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c4), False)
+
 
     def test_identify_orf_coordinates(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
