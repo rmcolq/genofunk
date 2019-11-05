@@ -61,6 +61,12 @@ class EditFile():
     def add_edit(self, edit):
         self.edits.append(edit)
 
+    def append(self, filepath):
+        data = pd.read_csv(filepath)
+        for i,row in data.iterrows():
+            e = Edit(row["read_id"], row["read_pos"], row["from"], row["to"], row["ref_id"], row["ref_pos"])
+            self.edits.append(e)
+
     def save(self, filepath):
         with open(filepath, "w") as f:
             header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos"])

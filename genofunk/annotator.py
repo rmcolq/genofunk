@@ -51,8 +51,8 @@ class Annotator():
         records = list(SeqIO.parse(filepath, filetype))
         logging.debug("The consensus file contains %d records" %len(records))
         assert(len(records) > 0)
-        if len(records) > 0:
-            logging.warning("At present, genofunk only considers the first sequence in the consensus file")
+        #if len(records) > 0:
+        #    logging.warning("At present, genofunk only considers the first sequence in the consensus file")
         return records
 
     def apply_loaded_edits(self):
