@@ -1,4 +1,6 @@
 import pandas as pd
+import logging
+
 
 class Edit():
     def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position):
@@ -20,9 +22,6 @@ class Edit():
         elif self.edit_from == "NN":
             self.edit_from = sequence[self.sequence_position + offset:self.sequence_position + offset + 2]
 
-        print(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)],
-              self.edit_from)
-
         assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
                == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
@@ -31,8 +30,9 @@ class Edit():
     
         record.seq = updated_sequence
         self.edit_applied = True
-        print("old", sequence)
-        print("new", updated_sequence)
+        logging.debug("Applying edit changes")
+        logging.debug("Old: %s" %sequence)
+        logging.debug("New: %s" %updated_sequence)
         
     def remove_edit(self, record, offset=0):
         sequence = record.seq

@@ -20,7 +20,7 @@ def run(options):
         #filename=log_file,
         stream=sys.stdout,
         level=log_level,
-        format="%(asctime)s %(message)s",
+        format="%(asctime)s\t%(levelname)s\t%(message)s",
         datefmt="%d/%m/%Y %I:%M:%S",
     )
     logging.info(msg)

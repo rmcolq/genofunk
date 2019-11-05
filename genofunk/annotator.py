@@ -51,6 +51,8 @@ class Annotator():
         records = list(SeqIO.parse(filepath, filetype))
         logging.debug("The consensus file contains %d records" %len(records))
         assert(len(records) > 0)
+        if len(records) > 0:
+            logging.warning("At present, genofunk only considers the first sequence in the consensus file")
         return records
 
     def apply_loaded_edits(self):
@@ -93,7 +95,7 @@ class Annotator():
             if len(seq) % 3 == 1:
                 seq = seq + "NN"
             elif len(seq) % 3 == 2:
-                seq = seq + "NN"
+                seq = seq + "N"
             seq = seq.translate()
         return str(seq)
     
@@ -280,7 +282,7 @@ class Annotator():
     #    closest_accession = None
     #    return closest_accession
     
-    def identify_orf_coordinates(self, orf_coordinates, record_id=0):
+    def identify_orf_coordinates(self, orf_coordinates, record_id=0, min_score = 300):
         """
         Find the region in query/consensus sequence which aligns to sequence in reference nucleotide sequence with
         coordinates orf_coordinates
@@ -291,25 +293,22 @@ class Annotator():
         ref_sequence = self.get_reference_sequence(orf_coordinates, amino_acid=False)
         query_sequence = self.get_query_sequence(record_id, amino_acid=False)
         result = self.pairwise_ssw_align(ref_sequence, query_sequence)
-        return result.read_begin1, result.read_end1+1
+        logging.debug("Found score %s and cigar %s" %(result.score1, result.cigar))
+        if result.score1 > min_score:
+            return result.read_begin1, result.read_end1+1
+        else:
+            return None, None
 
     def frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, shift_from,
                     shift_to, coordinate_difference=0):
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
         cigar_length = self.cigar_length(cigar_pairs)
-        print("found coordinates", found_coordinates, "cigar length", cigar_length, "orf_coordinates", orf_coordinates,
-              "coordinate_difference", coordinate_difference)
-        print(self.get_query_sequence(record_id, coordinates=(found_coordinates[0] + 3 * (cigar_length)-10,
-                                                              found_coordinates[0] + 3 * (cigar_length)+10),
-                                      amino_acid=False))
         e = Edit(record_id, 1+found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
                  1+orf_coordinates[0] + 3 * (cigar_length))
-        print(e)
         e.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
         query_sequence = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
-        print(ref_sequence, query_sequence)
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
@@ -374,12 +373,16 @@ class Annotator():
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
-        print(self.reference_info["references"][self.closest_accession]["orf"])
+        logging.info("Found ORF: %s " %self.reference_info["references"][self.closest_accession]["orf"])
         for key, value in self.reference_info["references"][self.closest_accession]["orf"].items():
-            print(key,value)
+            logging.info("Find edits for %s, %s" %(key,value))
             coordinates = (value["start"], value["end"])
             query_start, query_end = self.identify_orf_coordinates(orf_coordinates=coordinates)
-            print(query_start, query_end)
+            if not query_start or not query_end:
+                logging.debug("No good alignment to ORF coordinates - skip this ORF/consensus combination")
+                continue
+            logging.debug("Identified ORF coordinates (%d,%d)" % (query_start, query_end))
             result = self.discover_edits(coordinates, (query_start, query_end))
+            logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
 
         self.edits.save(consensus_sequence_filepath + ".edits")
