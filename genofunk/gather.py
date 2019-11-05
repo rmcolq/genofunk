@@ -22,10 +22,13 @@ class Gather():
             consensus_file = edit_file.replace(".edits","")
             if not os.path.exists(consensus_file):
                 logging.error("Paired consensus file %s does not exist!" % consensus_file)
-
+            logging.debug("Loading consensus file %s and edit file %s" %(consensus_file, edit_file))
             self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
             self.edits.append(edit_file)
             logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence), len(self.edits.edits)))
 
+        self.edits.sort()
+
     def run(self, directory):
         self.load_from_directory(directory)
+        self.edits.save("tmp.edits", filter_by_applied=False)

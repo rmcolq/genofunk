@@ -1,7 +1,8 @@
 import pandas as pd
 import logging
+import functools
 
-
+@functools.total_ordering
 class Edit():
     def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position):
         self.sequence_id = sequence_id
@@ -14,6 +15,47 @@ class Edit():
         
     def __repr__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
+
+    def __eq__(self, other):
+        if self.sequence_id == other.sequence_id and self.sequence_position == other.sequence_position \
+                and self.edit_from == other.edit_from and self.edit_to == other.edit_to \
+                and self.reference_id == other.reference_id and self.reference_position == other.reference_position:
+            return True
+        return False
+
+    def __ne__(self, other):
+        if self.sequence_id == other.sequence_id and self.sequence_position == other.sequence_position \
+                and self.edit_from == other.edit_from and self.edit_to == other.edit_to \
+                and self.reference_id == other.reference_id and self.reference_position == other.reference_position:
+            return False
+        return True
+
+    def __lt__(self, other):
+        if self.reference_id < other.reference_id:
+            return True
+        elif self.reference_id > other.reference_id:
+            return False
+        elif self.reference_position < other.reference_position:
+            return True
+        elif self.reference_position > other.reference_position:
+            return False
+        elif self.edit_from < other.edit_from:
+            return True
+        elif self.edit_from > other.edit_from:
+            return False
+        elif self.edit_to < other.edit_to:
+            return True
+        elif self.edit_to > other.edit_to:
+            return False
+        elif self.sequence_id < other.sequence_id:
+            return True
+        elif self.sequence_id > other.sequence_id:
+            return False
+        elif self.sequence_position < other.sequence_position:
+            return True
+        elif self.sequence_position > other.sequence_position:
+            return False
+        return False
 
     def apply_edit(self, record, offset=0):
         sequence = record.seq
@@ -51,7 +93,7 @@ class EditFile():
         if filepath:
             data = pd.read_csv(filepath)
             for i,row in data.iterrows():
-                e = Edit(row["read_id"], row["read_pos"], row["from"], row["to"], row["ref_id"], row["ref_pos"])
+                e = Edit(row["read_id"], row["read_pos"], str(row["from"]), str(row["to"]), row["ref_id"], row["ref_pos"])
                 self.edits.append(e)
     
     def __repr__(self):
@@ -64,15 +106,18 @@ class EditFile():
     def append(self, filepath):
         data = pd.read_csv(filepath)
         for i,row in data.iterrows():
-            e = Edit(row["read_id"], row["read_pos"], row["from"], row["to"], row["ref_id"], row["ref_pos"])
+            e = Edit(row["read_id"], row["read_pos"], str(row["from"]), str(row["to"]), row["ref_id"], row["ref_pos"])
             self.edits.append(e)
 
-    def save(self, filepath):
+    def sort(self):
+        self.edits.sort()
+
+    def save(self, filepath, filter_by_applied=True):
         with open(filepath, "w") as f:
             header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos"])
             f.write("%s\n" %header)
             for e in self.edits:
-                if e.edit_applied:
+                if not filter_by_applied or e.edit_applied:
                     attributes = ','.join(
                         [str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
                          str(e.reference_position)])
