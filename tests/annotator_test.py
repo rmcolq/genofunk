@@ -2,6 +2,7 @@ import os
 import unittest
 import json
 from Bio.Seq import Seq
+import filecmp
 
 from genofunk import annotator
 from genofunk import editfile
@@ -505,3 +506,14 @@ class TestAnnotator(unittest.TestCase):
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),3)
         self.assertEqual(self.a.edits.edits[0].reference_position, 115)
+
+    def test_run(self):
+        a = annotator.Annotator("hobbit")
+        ref_filepath = os.path.join(data_dir, 'ref.json')
+        consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
+        a.run(ref_filepath, consensus_filepath)
+
+        tmp_file = os.path.join(data_dir, 'consensus.fasta.edits')
+        expect_file = os.path.join(data_dir, 'expect_consensus.fasta.edits')
+        self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
+        os.unlink(tmp_file)
