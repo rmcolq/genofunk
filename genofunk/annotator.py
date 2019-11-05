@@ -416,7 +416,7 @@ class Annotator():
         logging.info("Found ORF: %s " %self.reference_info["references"][self.closest_accession]["orf"])
 
         for record_id in range(len(self.consensus_sequence)):
-            logging.debug("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
+            logging.info("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
             for key, value in self.reference_info["references"][self.closest_accession]["orf"].items():
                 logging.info("Find edits for %s, %s" %(key,value))
                 coordinates = (value["start"], value["end"])
