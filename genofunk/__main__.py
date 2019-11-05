@@ -18,7 +18,7 @@ def main(args=None):
     #_____________________________ annotator ______________________________#
     subparser_annotator = subparsers.add_parser(
         "annotator",
-        usage="genofunk annotator -r <reference_info_json> -f <consensus_fasta> [-a ref_accession -e <edit_file>]",
+        usage="genofunk annotator -r <reference_info_json> -f <consensus_fasta> -a ref_accession [-e <edit_file>]",
         help="Identify edits for a consensus sequence",
     )
 

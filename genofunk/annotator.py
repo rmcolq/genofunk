@@ -52,6 +52,13 @@ class Annotator():
         logging.debug("The consensus file contains %d records" %len(records))
         assert(len(records) > 0)
         return records
+
+    def apply_loaded_edits(self):
+        if len(self.edits.edits) == 0:
+            return
+        for edit in self.edits.edits.reverse():
+            record = self.consensus_sequence[edit.sequence_id]
+            edit.apply_edit(record)
     
     def load_input_files(self, reference_filepath, consensus_filepath, edit_filepath = ""):
         """
@@ -64,6 +71,7 @@ class Annotator():
         self.consensus_sequence = self.load_consensus_sequence(consensus_filepath)
         self.reference_info = self.load_reference_info(reference_filepath)
         self.edits = EditFile(edit_filepath)
+        self.apply_loaded_edits()
         
     def get_sequence(self, seq, coordinates=None, offset=None, amino_acid=True):
         """
@@ -289,8 +297,11 @@ class Annotator():
                     shift_to, coordinate_difference=0):
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
         cigar_length = self.cigar_length(cigar_pairs)
-        print("found coordinates", found_coordinates, "cigar length", cigar_length, "orf_coordinates", orf_coordinates, "coordinate_difference", coordinate_difference)
-        print(self.get_query_sequence(record_id, coordinates=(found_coordinates[0] + 3 * (cigar_length)-10, found_coordinates[0] + 3 * (cigar_length)+10), amino_acid=False))
+        print("found coordinates", found_coordinates, "cigar length", cigar_length, "orf_coordinates", orf_coordinates,
+              "coordinate_difference", coordinate_difference)
+        print(self.get_query_sequence(record_id, coordinates=(found_coordinates[0] + 3 * (cigar_length)-10,
+                                                              found_coordinates[0] + 3 * (cigar_length)+10),
+                                      amino_acid=False))
         e = Edit(record_id, 1+found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
                  1+orf_coordinates[0] + 3 * (cigar_length))
         print(e)
@@ -312,7 +323,8 @@ class Annotator():
             logging.debug("Reject frame shift")
             return coordinate_difference, cigar_pairs, updated, e
 
-    def choose_best_frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, coordinate_difference=0):
+    def choose_best_frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
+                                coordinate_difference=0):
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
@@ -328,7 +340,8 @@ class Annotator():
         logging.debug("Choose winning shift")
         best = 0
         for i,result in enumerate(frame_shift_results):
-            if self.is_improved_cigar_prefix(frame_shift_results[best][1], result[1]) and self.is_longer_cigar_prefix(frame_shift_results[best][1], result[1]):
+            if self.is_improved_cigar_prefix(frame_shift_results[best][1], result[1]) \
+                    and self.is_longer_cigar_prefix(frame_shift_results[best][1], result[1]):
                 best = i
                 logging.debug("Override best with %d" %i)
 
@@ -368,3 +381,5 @@ class Annotator():
             query_start, query_end = self.identify_orf_coordinates(orf_coordinates=coordinates)
             print(query_start, query_end)
             result = self.discover_edits(coordinates, (query_start, query_end))
+
+        self.edits.save(consensus_sequence_filepath + ".edits")
