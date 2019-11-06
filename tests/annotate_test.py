@@ -517,3 +517,8 @@ class TestAnnotate(unittest.TestCase):
         expect_file = os.path.join(data_dir, 'expect_consensus.fasta.edits')
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
         os.unlink(tmp_file)
+
+        tmp_file = os.path.join(data_dir, 'consensus.fasta.coordinates')
+        expect_file = os.path.join(data_dir, 'expect_consensus.fasta.coordinates')
+        self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
+        os.unlink(tmp_file)

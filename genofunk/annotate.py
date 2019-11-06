@@ -17,6 +17,7 @@ class Annotate():
         self.consensus_sequence = None
         self.reference_info = None
         self.edits = None
+        self.coordinates = {}
         self.closest_accession = closest_accession
         
     def load_reference_info(self, filepath):
@@ -471,6 +472,12 @@ class Annotate():
         logging.debug("Edit list is now: %s" %self.edits)
         return coordinate_difference
 
+    def save_found_coordinates(self, filepath, write_format='a'):
+        with open(filepath,write_format) as f:
+            j = json.dumps(self.coordinates)
+            f.write(j)
+            f.write('\n')
+
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found ORF: %s " %self.reference_info["references"][self.closest_accession]["orf"])
@@ -487,5 +494,10 @@ class Annotate():
                 logging.debug("Identified ORF coordinates (%d,%d)" % (query_start, query_end))
                 coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end), record_id=record_id)
                 logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
-
+                self.coordinates[key] = {'start': query_start, 'end': query_end + coordinate_difference}
+            write_format = 'a'
+            if record_id == 0:
+                write_format = 'w'
+            self.save_found_coordinates(consensus_sequence_filepath + ".coordinates", write_format=write_format)
+            self.coordinates = {}
         self.edits.save(consensus_sequence_filepath + ".edits")
