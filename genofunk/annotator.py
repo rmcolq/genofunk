@@ -56,6 +56,10 @@ class Annotator():
         return records
 
     def apply_loaded_edits(self):
+        """
+        Apply the edits to the consensus nucleotide sequences in place (in reverse order to avoid offset errors)
+        :return:
+        """
         if len(self.edits.edits) == 0:
             return
         for edit in self.edits.edits.reverse():
@@ -251,6 +255,13 @@ class Annotator():
             return 0
 
     def is_extended_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
+        """
+        Checks if new_cigar_pairs is just an extension of old_cigar_pairs e.g. ("=",5) -> ("=",5),("X",1),("=",2)
+        or ("=",5) -> ("=",6).
+        :param old_cigar_pairs:
+        :param new_cigar_pairs:
+        :return: bool
+        """
         if len(old_cigar_pairs) > len(new_cigar_pairs):
             return False
 
@@ -266,6 +277,15 @@ class Annotator():
         return len(old_cigar_pairs) < len(new_cigar_pairs)
 
     def is_improved_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
+        """
+        Checks whether the new cigar is thought to be an improvement over the old one. This is determined by checking if
+        the new cigar extends the old one (in which case it is an improvement), whether one has a frame shift and the
+        other doesn't (frame shifts are bad) and then carefully pairwise checks along cigar prefix to first difference
+        and uses that to determine which is better.
+        :param old_cigar_pairs:
+        :param new_cigar_pairs:
+        :return: bool
+        """
         logging.debug("Old cigar pairs %s" %old_cigar_pairs)
         logging.debug("New cigar pairs %s" %new_cigar_pairs)
 
@@ -309,6 +329,13 @@ class Annotator():
         return False
 
     def is_longer_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
+        """
+        Checks if new cigar prefix is longer than old cigar prefix. Only counts mismatch bases if there is a match after
+        and breaks at first indel.
+        :param old_cigar_pairs:
+        :param new_cigar_pairs:
+        :return: bool
+        """
         old_cigar_length = self.cigar_length(old_cigar_pairs)
         new_cigar_length = self.cigar_length(new_cigar_pairs)
         logging.debug("Comparing %s and %s and found improvement to be %s" % (old_cigar_length, new_cigar_length,
@@ -340,6 +367,19 @@ class Annotator():
 
     def frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, shift_from,
                     shift_to, coordinate_difference=0):
+        """
+        Create a potential edit which applies a frame shift at a given position in the query sequence
+        :param orf_coordinates: coordinates of ORF in reference sequence
+        :param found_coordinates: corresponding coordinates for ORF in query sequence
+        :param record_id:
+        :param ref_sequence: amino acid sequence of reference in ORF
+        :param cigar_pairs: best amino acid alignment of query before frame shift
+        :param shift_from:
+        :param shift_to:
+        :param coordinate_difference: amount to offset when applying frame shift (given that we want raw coordinates in
+        query consensus sequence and it may have been updated with previously occurring frame shifts
+        :return: updated coordinate_difference, updated cigar_pairs, whether updated, edit (not applied)
+        """
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
         cigar_length = self.cigar_length(cigar_pairs)
         record_name = self.consensus_sequence[record_id].id
@@ -364,6 +404,18 @@ class Annotator():
 
     def choose_best_frame_shift(self, orf_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
                                 coordinate_difference=0):
+        """
+        Compares the frame shifts obtained by inserting or deleting 1 or 2 letters in the nucleotide query sequence to
+        see which if any returns the greatest improvement to the alignment cigar
+        :param orf_coordinates: coordinates of ORF in reference sequence
+        :param found_coordinates: corresponding coordinates for ORF in query sequence
+        :param record_id:
+        :param ref_sequence: amino acid sequence of reference in ORF
+        :param cigar_pairs: best amino acid alignment of query before frame shift
+        :param coordinate_difference: amount to offset when applying frame shift (given that we want raw coordinates in
+        query consensus sequence and it may have been updated with previously occurring frame shifts
+        :return: updated coordinate_difference, updated cigar_pairs, whether updated
+        """
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
@@ -391,6 +443,14 @@ class Annotator():
         return updated_coordinate_difference, cigar_pairs, updated
     
     def discover_edits(self, orf_coordinates, found_coordinates, record_id=0):
+        """
+        Gradually introduce frame shifts which improve the amino acid alignment prefix between reference and query
+        sequences in an interval
+        :param orf_coordinates: coordinates of ORF in reference sequence
+        :param found_coordinates: corresponding coordinates for ORF in query sequence
+        :param record_id:
+        :return: pairwise alignment with frame shifts added
+        """
         ref_sequence = self.get_reference_sequence(orf_coordinates)
         query_sequence = self.get_query_sequence(record_id, coordinates=found_coordinates)
         

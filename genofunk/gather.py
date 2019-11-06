@@ -14,6 +14,13 @@ class Gather():
         self.edits = None
 
     def load_from_directory(self, directory, filetype="fasta"):
+        """
+        Looks for pairs of *.fasta, *.fasta.edit files in a directory, and loads them into a single big list of edits
+        and a single big list of consensus sequences
+        :param directory:
+        :param filetype: if consensus sequence file not FASTA
+        :return:
+        """
         self.consensus_sequence = []
         self.edits = EditFile()
 
@@ -34,6 +41,11 @@ class Gather():
         self.edits.sort()
 
     def query_edit(self, edit):
+        """
+        Asks the user if they wish to ignore or accept a proposed edit.
+        :param edit:
+        :return:
+        """
         response = False
         data = input("Do you wish to ignore edit %s? [Y/n]" %edit)
         while not response:
@@ -47,6 +59,13 @@ class Gather():
                 data = input("Not an appropriate choice. Do you wish to ignore edit? [Y/n]")
 
     def query_edits(self, edit_list, message=""):
+        """
+        Asks the user if they wish to ignore or accept an edit which occurs between a position in a reference and
+        several consensus sequences. Applies the judgement to all these edits.
+        :param edit_list:
+        :param message:
+        :return:
+        """
         response = False
         data = input("%s\nDo you wish to ignore them? [Y/n]" %message)
         while not response:
@@ -62,6 +81,12 @@ class Gather():
                 data = input("Not an appropriate choice. Do you wish to ignore them? [Y/n]")
 
     def find_common_edits(self, min_occurrence=2):
+        """
+        Search for edits which occur with respect to the same reference at the same position and are of the same from/to
+        form in multiple consensus records. Questions the user about accepting or ignoring each such case.
+        :param min_occurrence: minimum number of times to see an edit to question it (Default:2)
+        :return:
+        """
         self.edits.sort()
         current_identical = []
         for new_edit in self.edits.edits:
@@ -78,6 +103,12 @@ class Gather():
                 current_identical = [new_edit]
 
     def find_similar_edits(self, min_occurrence=2):
+        """
+        Search for edits which occur with respect to the same reference at the same position but possibly with DIFFERENT
+        to/from sequences in multiple consensus records. Questions the user about accepting or ignoring each such case.
+        :param min_occurrence: minimum number of times to see an edit to question it (Default:2)
+        :return:
+        """
         self.edits.sort()
         current_similar = []
         for new_edit in self.edits.edits:

@@ -59,6 +59,12 @@ class Edit():
         return False
 
     def apply_edit(self, record, offset=0):
+        """
+        Applies the edit to the consensus nucleotide sequence in place.
+        :param record: a Seq object
+        :param offset: account for previously applied edits earlier in the sequence which
+        :return:
+        """
         sequence = record.seq
         if self.edit_from == "N":
             self.edit_from = sequence[self.sequence_position + offset]
@@ -78,6 +84,12 @@ class Edit():
         logging.debug("New: %s" %updated_sequence)
         
     def remove_edit(self, record, offset=0):
+        """
+        Removes the edit to the consensus nucleotide sequence in place.
+        :param record: a Seq object
+        :param offset: account for previously applied edits earlier in the sequence which
+        :return:
+        """
         sequence = record.seq
         assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_to)]
                == self.edit_to)
@@ -108,9 +120,19 @@ class EditFile():
         return True
 
     def add_edit(self, edit):
+        """
+        Add edit to list for file
+        :param edit:
+        :return:
+        """
         self.edits.append(edit)
 
     def append(self, filepath):
+        """
+        Append edits found in filepath to list of edits
+        :param filepath:
+        :return:
+        """
         data = pd.read_csv(filepath)
         for i,row in data.iterrows():
             edit_from, edit_to = str(row["from"]), str(row["to"])
@@ -126,9 +148,19 @@ class EditFile():
             self.edits.append(e)
 
     def sort(self):
+        """
+        Sorts edits by reference_id, reference_position, edit_from, edit_to, sequence_id, sequence_position
+        :return:
+        """
         self.edits.sort()
 
     def save(self, filepath, filter_by_applied=True):
+        """
+        Save EditFile as a CSV
+        :param filepath:
+        :param filter_by_applied: filter out edits which have not been applied? Default: True
+        :return:
+        """
         with open(filepath, "w") as f:
             header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos", "edit_accepted"])
             f.write("%s\n" %header)
