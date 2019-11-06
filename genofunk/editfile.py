@@ -92,24 +92,21 @@ class EditFile():
     def __init__(self, filepath=None):
         self.edits = []
         if filepath:
-            data = pd.read_csv(filepath)
-            for i,row in data.iterrows():
-                edit_from, edit_to = str(row["from"]), str(row["to"])
-                if edit_from in [None, "nan"]:
-                    edit_from = ""
-                if edit_to in [None, "nan"]:
-                    edit_to = ""
-                edit_accepted = True
-                if 'edit_accepted' in data.columns:
-                    edit_accepted = row['edit_accepted']
-
-                e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"], edit_accepted)
-                self.edits.append(e)
+            self.append(filepath)
     
     def __repr__(self):
         return  str(self.__class__) + '\n'+ '\n'.join(('{} = {}'.format(item, self.__dict__[item]) for item in
                                                        self.__dict__))
-            
+    def __eq__(self, other):
+        if len(self.edits) != len(other.edits):
+            return False
+        self.sort()
+        other.sort()
+        for i in range(len(self.edits)):
+            if self.edits[i] != other.edits[i]:
+                return False
+        return True
+
     def add_edit(self, edit):
         self.edits.append(edit)
 

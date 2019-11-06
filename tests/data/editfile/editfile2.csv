@@ -1,0 +1,6 @@
+read_id,read_pos,from,to,ref_id,ref_pos,edit_accepted
+seq1_with_1_deletion_and_mismatch,37,,N,hobbit,40,True
+seq1_with_2_deletions,61,,NN,hobbit,64,True
+seq1_with_1_insertion,22,a,,hobbit,25,True
+seq1_with_2_insertions,37,cc,,hobbit,40,True
+seq1_with_mismatch_insertion_deletion_mismatch,16,t,,hobbit,19,True
