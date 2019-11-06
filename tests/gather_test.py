@@ -1,8 +1,14 @@
 import os
 import unittest
+from unittest import mock
+
 import filecmp
 
 from genofunk import gather
+from genofunk import editfile
+
+EditFile = editfile.EditFile
+Edit = editfile.Edit
 
 this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(this_dir, 'tests', 'data', 'gather')
@@ -25,3 +31,16 @@ class TestGather(unittest.TestCase):
         self.assertIsNotNone(self.g.consensus_sequence)
         self.assertEqual(len(self.g.edits.edits), 14)
         self.assertEqual(len(self.g.consensus_sequence), 12)
+
+    def test_query_edit(self):
+        self.g.edits = EditFile()
+        self.g.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        e = self.g.edits.edits[0]
+        print(e)
+        with mock.patch('builtins.input', return_value="y"):
+            self.g.query_edit(e)
+            assert e.edit_accepted == False
+
+        with mock.patch('builtins.input', return_value="n"):
+            self.g.query_edit(e)
+            assert e.edit_accepted == True
