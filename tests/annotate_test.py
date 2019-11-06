@@ -470,38 +470,38 @@ class TestAnnotate(unittest.TestCase):
         self.assertEqual(result_cigar_pairs, cigar_pairs)
         self.assertEqual(result_updated, False)
 
-    def test_discover_edits_mismatches_no_edits(self):
+    def test_discover_frame_shift_edits_mismatches_no_edits(self):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
         record_id = 6
-        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),0)
 
-    def test_discover_edits_mismatch_insertion_deletion_mismatch(self):
+    def test_discover_frame_shift_edits_mismatch_insertion_deletion_mismatch(self):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
         record_id = 7
-        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),2)
 
-    def test_discover_edits_double_deletion_mismatch_insertion(self):
+    def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
         record_id = 8
-        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),2)
 
-    def test_discover_edits_3_insertions(self):
+    def test_discover_frame_shift_edits_3_insertions(self):
         orf_coordinates = (93, 219)
         found_coordinates = (0, 126)
         record_id = 9
-        self.a.discover_edits(orf_coordinates, found_coordinates, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
 
         print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),3)

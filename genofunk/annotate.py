@@ -442,7 +442,7 @@ class Annotate():
 
         return updated_coordinate_difference, cigar_pairs, updated
     
-    def discover_edits(self, orf_coordinates, found_coordinates, record_id=0):
+    def discover_frame_shift_edits(self, orf_coordinates, found_coordinates, record_id=0):
         """
         Gradually introduce frame shifts which improve the amino acid alignment prefix between reference and query
         sequences in an interval
@@ -469,7 +469,7 @@ class Annotate():
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)
-        return result
+        return coordinate_difference
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
@@ -485,7 +485,7 @@ class Annotate():
                     logging.debug("No good alignment to ORF coordinates - skip this ORF/consensus combination")
                     continue
                 logging.debug("Identified ORF coordinates (%d,%d)" % (query_start, query_end))
-                result = self.discover_edits(coordinates, (query_start, query_end), record_id=record_id)
+                coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end), record_id=record_id)
                 logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
 
         self.edits.save(consensus_sequence_filepath + ".edits")
