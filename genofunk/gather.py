@@ -17,11 +17,15 @@ class Gather():
         self.consensus_sequence = []
         self.edits = EditFile()
 
-        edit_files = glob.iglob("%s/*.edits" %directory)
+        edit_files = glob.glob("%s/*.edits" %directory)
+        if len(edit_files) == 0:
+            logging.error("No edit files found in directory %s" %directory)
+            assert(len(edit_files) > 0)
         for edit_file in edit_files:
             consensus_file = edit_file.replace(".edits","")
             if not os.path.exists(consensus_file):
                 logging.error("Paired consensus file %s does not exist!" % consensus_file)
+                assert(os.path.exists(consensus_file))
             logging.debug("Loading consensus file %s and edit file %s" %(consensus_file, edit_file))
             self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
             self.edits.append(edit_file)
