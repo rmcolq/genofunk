@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from genofunk import merge
+from genofunk import apply
 
 
 def run(options):
@@ -13,7 +13,7 @@ def run(options):
         log_level = logging.INFO
         msg = "Using info logging"
 
-    #log_file = f"merge.log"
+    #log_file = f"apply.log"
     #if os.path.exists(log_file):
     #    os.unlink(log_file)
     logging.basicConfig(
@@ -28,5 +28,5 @@ def run(options):
         "Input parameters:\nDirectory: %s" %options.directory
     )
 
-    g = merge.Merge()
-    g.run(options.directory)
+    g = apply.Apply()
+    g.run(options.directory, options.edit_file)
