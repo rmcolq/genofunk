@@ -4,14 +4,15 @@ import functools
 
 @functools.total_ordering
 class Edit():
-    def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position):
+    def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position, edit_accepted=True, edit_applied=False):
         self.sequence_id = sequence_id
         self.sequence_position = sequence_position
         self.edit_from = edit_from
         self.edit_to = edit_to
         self.reference_id = reference_id
         self.reference_position = reference_position
-        self.edit_applied = False
+        self.edit_accepted = edit_accepted
+        self.edit_applied = edit_applied
         
     def __repr__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
@@ -93,7 +94,16 @@ class EditFile():
         if filepath:
             data = pd.read_csv(filepath)
             for i,row in data.iterrows():
-                e = Edit(row["read_id"], row["read_pos"], str(row["from"]), str(row["to"]), row["ref_id"], row["ref_pos"])
+                edit_from, edit_to = str(row["from"]), str(row["to"])
+                if edit_from in [None, "nan"]:
+                    edit_from = ""
+                if edit_to in [None, "nan"]:
+                    edit_to = ""
+                edit_accepted = True
+                if 'edit_accepted' in data.columns:
+                    edit_accepted = row['edit_accepted']
+
+                e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"], edit_accepted)
                 self.edits.append(e)
     
     def __repr__(self):
@@ -106,7 +116,16 @@ class EditFile():
     def append(self, filepath):
         data = pd.read_csv(filepath)
         for i,row in data.iterrows():
-            e = Edit(row["read_id"], row["read_pos"], str(row["from"]), str(row["to"]), row["ref_id"], row["ref_pos"])
+            edit_from, edit_to = str(row["from"]), str(row["to"])
+            if edit_from in [None, "nan"]:
+                edit_from = ""
+            if edit_to in [None, "nan"]:
+                edit_to = ""
+            edit_accepted = True
+            if 'edit_accepted' in data.columns:
+                edit_accepted = row['edit_accepted']
+
+            e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"], edit_accepted)
             self.edits.append(e)
 
     def sort(self):
@@ -114,11 +133,11 @@ class EditFile():
 
     def save(self, filepath, filter_by_applied=True):
         with open(filepath, "w") as f:
-            header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos"])
+            header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos", "edit_accepted"])
             f.write("%s\n" %header)
             for e in self.edits:
                 if not filter_by_applied or e.edit_applied:
                     attributes = ','.join(
                         [str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
-                         str(e.reference_position)])
+                         str(e.reference_position), str(e.edit_accepted)])
                     f.write("%s\n" %attributes)
