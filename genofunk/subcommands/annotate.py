@@ -2,7 +2,8 @@ import logging
 import os
 import sys
 
-from genofunk import gather
+from genofunk import annotate, editfile
+from genofunk import annotate, editfile
 
 
 def run(options):
@@ -13,7 +14,7 @@ def run(options):
         log_level = logging.INFO
         msg = "Using info logging"
 
-    #log_file = f"annotator.log"
+    #log_file = f"annotate.log"
     #if os.path.exists(log_file):
     #    os.unlink(log_file)
     logging.basicConfig(
@@ -25,8 +26,13 @@ def run(options):
     )
     logging.info(msg)
     logging.info(
-        "Input parameters:\nDirectory: %s" %options.directory
+        "Input parameters:\nReference JSON: %s\nConsensus fasta: %s\nEdit file: %s\nAccession: %s",
+        options.reference_file,
+        options.consensus_file,
+        options.edit_file,
+        options.accession,
     )
 
-    g = gather.Gather()
-    g.run(options.directory)
+    a = annotate.Annotate(options.accession)
+    a.run(options.reference_file, options.consensus_file, options.edit_file)
+

@@ -12,7 +12,7 @@ from genofunk import editfile
 EditFile = editfile.EditFile
 Edit = editfile.Edit
 
-class Annotator():
+class Annotate():
     def __init__(self, closest_accession=None):
         self.consensus_sequence = None
         self.reference_info = None

@@ -4,55 +4,55 @@ import json
 from Bio.Seq import Seq
 import filecmp
 
-from genofunk import annotator
+from genofunk import annotate
 from genofunk import editfile
 
 EditFile = editfile.EditFile
 Edit = editfile.Edit
 
 this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_dir = os.path.join(this_dir, 'tests', 'data', 'annotator')
+data_dir = os.path.join(this_dir, 'tests', 'data', 'annotate')
 
-class TestAnnotator(unittest.TestCase):
+class TestAnnotate(unittest.TestCase):
     def setUp(self):
         ref_filepath = os.path.join(data_dir, 'ref.json')
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        self.a = annotator.Annotator("hobbit")
+        self.a = annotate.Annotate("hobbit")
         self.a.load_input_files(ref_filepath, consensus_filepath)
 
     def test_load_reference_info_no_file(self):
         ref_filepath = os.path.join(data_dir, 'idontexist.json')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(FileNotFoundError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_empty_file(self):
         ref_filepath = os.path.join(data_dir, 'empty_ref.json')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(json.decoder.JSONDecodeError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_no_references(self):
         ref_filepath = os.path.join(data_dir, 'no_references_ref.json')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_no_sequence(self):
         ref_filepath = os.path.join(data_dir, 'missing_sequence_ref.json')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_no_orf(self):
         ref_filepath = os.path.join(data_dir, 'missing_orf_ref.json')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_missing_accession(self):
         ref_filepath = os.path.join(data_dir, 'missing_accession_ref.json')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_correct_accession(self):
         ref_filepath = os.path.join(data_dir, 'ref.json')
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         data = a.load_reference_info(ref_filepath)
         print(a)
         print(a.closest_accession)
@@ -61,17 +61,17 @@ class TestAnnotator(unittest.TestCase):
 
     def test_load_consensus_no_file(self):
         consensus_filepath = os.path.join(data_dir, 'idontexist.fasta')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(FileNotFoundError, a.load_consensus_sequence, consensus_filepath)
 
     def test_load_consensus_empty_file(self):
         consensus_filepath = os.path.join(data_dir, 'empty_consensus.fasta')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_consensus_sequence, consensus_filepath)
 
     def test_load_consensus_simple_case(self):
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
-        a = annotator.Annotator("accession")
+        a = annotate.Annotate("accession")
         records = a.load_consensus_sequence(consensus_filepath)
         self.assertEqual(len(records), 10)
         self.assertEqual(records[0].seq, "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaa"
@@ -87,53 +87,53 @@ class TestAnnotator(unittest.TestCase):
 
     def test_get_sequence_not_Seq(self):
         seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         self.assertRaises(TypeError, a.get_sequence, seq)
 
     def test_get_sequence_simple_case(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq, amino_acid=False)
         self.assertEqual(seq, result)
 
     def test_get_sequence_coordinates_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq, coordinates=(0,12), amino_acid=False)
         expected = "atgcccaagctg"
         self.assertEqual(expected, result)
 
     def test_get_sequence_offset_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq, offset=3, amino_acid=False)
         expected = "cccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDV*"
         self.assertEqual(expected, result)
 
     def test_get_sequence_coordinates_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq, coordinates=(0,48))
         expected = "MPKLNSVEGFSSFEDD"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_1(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtat")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_2(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtata")
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         result = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
@@ -164,7 +164,7 @@ class TestAnnotator(unittest.TestCase):
     def test_pairwise_ssw_align(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         result = a.pairwise_ssw_align(ref_seq, query_seq)
         self.assertEqual(3,result.read_begin1)
         self.assertEqual(result.read_end1, 56)
@@ -173,14 +173,14 @@ class TestAnnotator(unittest.TestCase):
     def test_pairwise_sw_trace_align(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         self.assertEqual(b'8=1X7=1X6=1D9=1X10=1I10=',result.cigar.decode)
 
     def test_parse_cigar(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         parsed_cigar = a.parse_cigar(result)
         expected = [("=",8), ("X",1), ("=",7), ("X",1), ("=",6), ("D",1), ("=",9), ("X",1), ("=",10), ("I",1), ("=",10)]
@@ -189,7 +189,7 @@ class TestAnnotator(unittest.TestCase):
     def test_cigar_length(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
         cigar_length = a.cigar_length(pairs)
@@ -197,7 +197,7 @@ class TestAnnotator(unittest.TestCase):
         self.assertEqual(expected, cigar_length)
 
     def test_is_extended_cigar_prefix(self):
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         c1 = [("=", 12), ("X", 1), ("=", 17)]
         c2 = [("=", 10), ("X", 3), ("=", 17)]
         c3 = [("=", 12), ("X", 3), ("=", 15)]
@@ -240,7 +240,7 @@ class TestAnnotator(unittest.TestCase):
         self.assertEqual(a.is_extended_cigar_prefix(c5, c4), False)
 
     def test_is_improved_cigar_prefix(self):
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         c1 = [("=", 12), ("X", 1), ("=", 17)]
         c2 = [("=", 10), ("X", 3), ("=", 17)]
         c3 = [("=", 12), ("X", 3), ("=", 15)]
@@ -295,7 +295,7 @@ class TestAnnotator(unittest.TestCase):
     def test_identify_orf_coordinates(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
-        a = annotator.Annotator()
+        a = annotate.Annotate()
         result = a.pairwise_ssw_align(ref_seq, query_seq)
         self.assertEqual(3, result.read_begin1)
         self.assertEqual(result.read_end1, 56)
@@ -508,7 +508,7 @@ class TestAnnotator(unittest.TestCase):
         self.assertEqual(self.a.edits.edits[0].reference_position, 115)
 
     def test_run(self):
-        a = annotator.Annotator("hobbit")
+        a = annotate.Annotate("hobbit")
         ref_filepath = os.path.join(data_dir, 'ref.json')
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
         a.run(ref_filepath, consensus_filepath)

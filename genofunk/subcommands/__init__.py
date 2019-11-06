@@ -1,3 +1,3 @@
-__all__ = ["annotator", "gather"]
+__all__ = ["annotate", "merge"]
 
 from genofunk.subcommands import *

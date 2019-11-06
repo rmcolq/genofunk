@@ -8,7 +8,7 @@ from genofunk import editfile
 EditFile = editfile.EditFile
 Edit = editfile.Edit
 
-class Gather():
+class Merge():
     def __init__(self):
         self.consensus_sequence = None
         self.edits = None

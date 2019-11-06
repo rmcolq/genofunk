@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from genofunk import annotator, editfile
+from genofunk import merge
 
 
 def run(options):
@@ -25,13 +25,8 @@ def run(options):
     )
     logging.info(msg)
     logging.info(
-        "Input parameters:\nReference JSON: %s\nConsensus fasta: %s\nEdit file: %s\nAccession: %s",
-        options.reference_file,
-        options.consensus_file,
-        options.edit_file,
-        options.accession,
+        "Input parameters:\nDirectory: %s" %options.directory
     )
 
-    a = annotator.Annotator(options.accession)
-    a.run(options.reference_file, options.consensus_file, options.edit_file)
-
+    g = merge.Merge()
+    g.run(options.directory)

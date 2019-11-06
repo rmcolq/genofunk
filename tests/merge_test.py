@@ -4,18 +4,18 @@ from unittest import mock
 
 import filecmp
 
-from genofunk import gather
+from genofunk import merge
 from genofunk import editfile
 
 EditFile = editfile.EditFile
 Edit = editfile.Edit
 
 this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_dir = os.path.join(this_dir, 'tests', 'data', 'gather')
+data_dir = os.path.join(this_dir, 'tests', 'data', 'merge')
 
-class TestGather(unittest.TestCase):
+class TestMerge(unittest.TestCase):
     def setUp(self):
-        self.g = gather.Gather()
+        self.g = merge.Merge()
 
     def test_load_from_directory_empty(self):
         empty_dir = os.path.join(data_dir, "empty")
