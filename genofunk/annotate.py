@@ -27,8 +27,10 @@ class Annotate():
         :return: dict (from JSON)
         """
         logging.debug("Loading reference JSON %s" % filepath)
-        if not os.path.exists(filepath):
+        if not filepath or not os.path.exists(filepath):
             logging.error("Reference filepath %s does not exist!" %filepath)
+            assert (filepath != None)
+            assert (os.path.exists(filepath))
         with open(filepath) as json_file:
             data = json.load(json_file)
         logging.debug("Checking that JSON has correct format and contains the appropriate fields (sequence and orf) "
@@ -47,8 +49,10 @@ class Annotate():
         :return: records
         """
         logging.debug("Loading consensus %s %s" %(filetype,filepath))
-        if not os.path.exists(filepath):
+        if not filepath or os.path.exists(filepath):
             logging.error("Consensus filepath %s does not exist!" %filepath)
+            assert (filepath != None)
+            assert(os.path.exists(filepath))
         records = list(SeqIO.parse(filepath, filetype))
         logging.debug("The consensus file contains %d records" %len(records))
         assert(len(records) > 0)

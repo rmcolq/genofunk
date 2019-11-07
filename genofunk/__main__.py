@@ -18,7 +18,7 @@ def main(args=None):
     #_____________________________ annotate ______________________________#
     subparser_annotate = subparsers.add_parser(
         "annotate",
-        usage="genofunk annotate -r <reference_info_json> -f <consensus_fasta> -a ref_accession [-e <edit_file>]",
+        usage="genofunk annotate -r <reference_info_json> -c <consensus_file> -a ref_accession [-e <edit_file>]",
         help="Identify edits for a consensus sequence to remove frame shifts with respect to \n"
              "the reference. Assumes you know the closest reference for the provided sample \n"
              "and that this is the closest reference to all contigs in the consensus file",
@@ -34,13 +34,12 @@ def main(args=None):
         "the dictionary should include nucleotide sequence and ORF coordinates",
     )
     subparser_annotate.add_argument(
-        "-f",
+        "-c",
         "--consensus_file",
         dest="consensus_file",
         action="store",
         type=str,
-        help="Input file: a FASTA formatted file containing the consensus sequence(s) for "
-        "a sample",
+        help="Input file: a FASTA formatted file containing nucleotide consensus sequences",
     )
     subparser_annotate.add_argument(
         "-a",
@@ -135,6 +134,48 @@ def main(args=None):
         help="Run with high verbosity " "(debug level logging)",
     )
     subparser_apply.set_defaults(func=genofunk.subcommands.apply.run)
+
+    # _____________________________ translate ______________________________#
+    subparser_translate = subparsers.add_parser(
+        "translate",
+        usage="genofunk translate -c <consensus_file> -a <alignment> [ -o <output_file> ]",
+        help="Aligns the (corrected) nucleotide sequences based on an amino acid alignment",
+    )
+
+    subparser_translate.add_argument(
+        "-c",
+        "--consensus_file",
+        dest="consensus_file",
+        action="store",
+        type=str,
+        help="Input file: a FASTA formatted file containing (corrected) nucleotide consensus sequences as "
+             "output by `apply`",
+    )
+    subparser_translate.add_argument(
+        "-a",
+        "--alignment_file",
+        dest="alignment_file",
+        action="store",
+        type=str,
+        help="Input file: a FASTA formatted amino acid alignment file"
+    )
+    subparser_translate.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        action="store",
+        type=str,
+        help="Output file name",
+    )
+
+    subparser_translate.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="Run with high verbosity " "(debug level logging)",
+    )
+    subparser_translate.set_defaults(func=genofunk.subcommands.translate.run)
 
     args = parser.parse_args()
 

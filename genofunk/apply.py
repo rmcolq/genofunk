@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import glob
 from Bio import SeqIO
@@ -54,22 +55,31 @@ class Apply():
             record = self.consensus_sequence[edit.sequence_id]
             edit.apply_edit(record)
 
-    def save_amino_acid_consensuses(self, filepath, coordinates=None):
-        with open(filepath, 'w') as f:
-            for seq in self.consensus_sequence:
-                assert (type(seq), Seq)
-                if coordinates:
-                    (start, end) = coordinates
-                    seq = seq[start:end]
+    def save_amino_acid_consensuses(self, filepath=None, coordinates=None):
+        if filepath:
+            out_handle = open(filepath, 'w')
+        else:
+            out_handle = sys.stdout
 
-                if len(seq) % 3 == 1:
-                    seq = seq + "NN"
-                elif len(seq) % 3 == 2:
-                    seq = seq + "N"
-                seq = seq.translate()
-            SeqIO.write(seq, f, "fasta")
+        for seq in self.consensus_sequence:
+            assert (type(seq), Seq)
+            if coordinates:
+                (start, end) = coordinates
+                seq = seq[start:end]
+            if len(seq) % 3 == 1:
+                seq = seq + "NN"
+            elif len(seq) % 3 == 2:
+                seq = seq + "N"
+            new_seq = seq.translate()
+            new_seq.id = seq.id
+            new_seq.name = seq.name
+            new_seq.description = seq.description
+        SeqIO.write(new_seq, out_handle, "fasta")
+
+        if filepath:
+            out_handle.close()
 
     def run(self, directory, edit_filepath):
         self.load_input_files(directory, edit_filepath)
         self.apply_loaded_edits()
-        self.save_amino_acid_consensuses("genofunk_output.fasta")
+        self.save_amino_acid_consensuses()
