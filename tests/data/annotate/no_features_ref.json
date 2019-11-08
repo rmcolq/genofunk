@@ -1,7 +1,7 @@
 {
   "schema": "v1.1",
   "label": "Overall label for species",
-  "features": {
+  "feature": {
     "ORF1": {
       "type": "orf",
       "description": "blah1"
@@ -15,7 +15,7 @@
       "description": "blah3"
     }
   },
-  "reference": {
+  "references": {
     "hobbit": {
       "accession": "hobbit",
       "description": "Small creature",

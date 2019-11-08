@@ -1,20 +1,32 @@
 {
-  "references":
-  {
-    "hobbit":
-    {
+  "schema": "v1.1",
+  "label": "Overall label for species",
+  "features": {
+    "ORF1": {
+      "type": "orf",
+      "description": "blah1"
+    },
+    "ORF2": {
+      "type": "orf",
+      "description": "blah2"
+    },
+    "ORF3": {
+      "type": "orf",
+      "description": "blah3"
+    }
+  },
+  "references": {
+    "hobbit": {
       "accession": "hobbit",
       "description": "Small creature",
-      "orf":
-      {
-        "ORF1":
-        {
+      "length": 219,
+      "locations": {
+        "ORF1": {
           "start": 3,
           "end": 93,
           "strand": 1
         },
-        "ORF2":
-        {
+        "ORF2": {
           "start": 93,
           "end": 219,
           "strand": 1
@@ -22,10 +34,12 @@
       },
       "sequence": "atgattaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaaaacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccatgaagaaaacgatagcttttggcgcatgagctaa"
     },
-
     "test":
     {
       "accession": "test",
+      "length": 50,
+      "locations": {
+      },
       "sequence" : "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
     }
   }

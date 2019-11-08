@@ -15,12 +15,12 @@
       "description": "blah3"
     }
   },
-  "reference": {
+  "references": {
     "hobbit": {
       "accession": "hobbit",
       "description": "Small creature",
       "length": 219,
-      "locations": {
+      "location": {
         "ORF1": {
           "start": 3,
           "end": 93,

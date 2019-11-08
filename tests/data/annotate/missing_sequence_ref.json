@@ -1,1 +1,45 @@
-{"references": {"LN854563.1": {"accession": "LN854563.1", "description": "Norovirus GI/Hu/NL/2011/GI.4/Groningen, complete genome", "orf": {"ORF1": {"start": 4, "end": 5362, "strand": 1}, "ORF2": {"start": 5345, "end": 6980, "strand": 1}, "ORF3": {"start": 6979, "end": 7606, "strand": 1}}}}} 
+{
+  "schema": "v1.1",
+  "label": "Overall label for species",
+  "features": {
+    "ORF1": {
+      "type": "orf",
+      "description": "blah1"
+    },
+    "ORF2": {
+      "type": "orf",
+      "description": "blah2"
+    },
+    "ORF3": {
+      "type": "orf",
+      "description": "blah3"
+    }
+  },
+  "references": {
+    "hobbit": {
+      "accession": "hobbit",
+      "description": "Small creature",
+      "length": 219,
+      "locations": {
+        "ORF1": {
+          "start": 3,
+          "end": 93,
+          "strand": 1
+        },
+        "ORF2": {
+          "start": 93,
+          "end": 219,
+          "strand": 1
+        }
+      }
+    },
+    "test":
+    {
+      "accession": "test",
+      "length": 50,
+      "locations": {
+      },
+      "sequence" : "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
+    }
+  }
+}

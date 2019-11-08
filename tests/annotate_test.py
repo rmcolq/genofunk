@@ -13,6 +13,7 @@ Edit = editfile.Edit
 this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_dir = os.path.join(this_dir, 'tests', 'data', 'annotate')
 
+
 class TestAnnotate(unittest.TestCase):
     def setUp(self):
         ref_filepath = os.path.join(data_dir, 'ref.json')
@@ -23,7 +24,7 @@ class TestAnnotate(unittest.TestCase):
     def test_load_reference_info_no_file(self):
         ref_filepath = os.path.join(data_dir, 'idontexist.json')
         a = annotate.Annotate("accession")
-        self.assertRaises(FileNotFoundError, a.load_reference_info, ref_filepath)
+        self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_empty_file(self):
         ref_filepath = os.path.join(data_dir, 'empty_ref.json')
@@ -35,28 +36,40 @@ class TestAnnotate(unittest.TestCase):
         a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
-    def test_load_reference_info_no_sequence(self):
-        ref_filepath = os.path.join(data_dir, 'missing_sequence_ref.json')
+    def test_load_reference_info_no_features(self):
+        ref_filepath = os.path.join(data_dir, 'no_features_ref.json')
         a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
-    def test_load_reference_info_no_orf(self):
-        ref_filepath = os.path.join(data_dir, 'missing_orf_ref.json')
+    def test_load_reference_info_features_empty(self):
+        ref_filepath = os.path.join(data_dir, 'features_empty_ref.json')
         a = annotate.Annotate("accession")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_missing_accession(self):
-        ref_filepath = os.path.join(data_dir, 'missing_accession_ref.json')
+        ref_filepath = os.path.join(data_dir, 'ref.json')
         a = annotate.Annotate("accession")
+        self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
+
+    def test_load_reference_info_no_sequence(self):
+        ref_filepath = os.path.join(data_dir, 'missing_sequence_ref.json')
+        a = annotate.Annotate("hobbit")
+        self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
+
+    def test_load_reference_info_no_locations(self):
+        ref_filepath = os.path.join(data_dir, 'missing_locations_ref.json')
+        a = annotate.Annotate("hobbit")
+        self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
+
+    def test_load_reference_info_locations_empty(self):
+        ref_filepath = os.path.join(data_dir, 'locations_empty_ref.json')
+        a = annotate.Annotate("test")
         self.assertRaises(AssertionError, a.load_reference_info, ref_filepath)
 
     def test_load_reference_info_correct_accession(self):
         ref_filepath = os.path.join(data_dir, 'ref.json')
         a = annotate.Annotate("hobbit")
         data = a.load_reference_info(ref_filepath)
-        print(a)
-        print(a.closest_accession)
-        print(data)
         self.assertIsNotNone(data)
 
     def test_load_consensus_no_file(self):

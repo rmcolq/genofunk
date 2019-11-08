@@ -2,20 +2,8 @@
   "schema": "v1.1",
   "label": "Overall label for species",
   "features": {
-    "ORF1": {
-      "type": "orf",
-      "description": "blah1"
-    },
-    "ORF2": {
-      "type": "orf",
-      "description": "blah2"
-    },
-    "ORF3": {
-      "type": "orf",
-      "description": "blah3"
-    }
   },
-  "reference": {
+  "references": {
     "hobbit": {
       "accession": "hobbit",
       "description": "Small creature",
