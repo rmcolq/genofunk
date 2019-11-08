@@ -44,7 +44,7 @@ class Apply():
         self.edits = EditFile(edit_filepath)
         self.edits.sort()
 
-    def apply_loaded_edits(self):
+    def apply_loaded_edits(self, filter_by_accepted=False):
         """
         Apply the edits to the consensus nucleotide sequences in place (in reverse order to avoid offset errors)
         :return:
@@ -53,9 +53,9 @@ class Apply():
             return
         for edit in self.edits.edits.reverse():
             record = self.consensus_sequence[edit.sequence_id]
-            edit.apply_edit(record)
+            edit.apply_edit(record, filter_by_accepted)
 
-    def save_amino_acid_consensuses(self, filepath=None, coordinates=None):
+    def save_updated_consensuses(self, filepath=None, coordinates=None, amino_acid=False):
         if filepath:
             out_handle = open(filepath, 'w')
         else:
@@ -66,15 +66,17 @@ class Apply():
             if coordinates:
                 (start, end) = coordinates
                 seq = seq[start:end]
-            if len(seq) % 3 == 1:
-                seq = seq + "NN"
-            elif len(seq) % 3 == 2:
-                seq = seq + "N"
-            new_seq = seq.translate()
-            new_seq.id = seq.id
-            new_seq.name = seq.name
-            new_seq.description = seq.description
-        SeqIO.write(new_seq, out_handle, "fasta")
+            if amino_acid:
+                if len(seq) % 3 == 1:
+                    seq = seq + "NN"
+                elif len(seq) % 3 == 2:
+                    seq = seq + "N"
+                new_seq = seq.translate()
+                new_seq.id = seq.id
+                new_seq.name = seq.name
+                new_seq.description = seq.description
+                seq = new_seq
+        SeqIO.write(seq, out_handle, "fasta")
 
         if filepath:
             out_handle.close()
@@ -82,4 +84,4 @@ class Apply():
     def run(self, directory, edit_filepath):
         self.load_input_files(directory, edit_filepath)
         self.apply_loaded_edits()
-        self.save_amino_acid_consensuses()
+        self.save_updated_consensuses()

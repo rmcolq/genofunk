@@ -58,13 +58,19 @@ class Edit():
             return False
         return False
 
-    def apply_edit(self, record, offset=0):
+    def apply_edit(self, record, offset=0, filter_by_accepted=False):
         """
         Applies the edit to the consensus nucleotide sequence in place.
         :param record: a Seq object
         :param offset: account for previously applied edits earlier in the sequence which
         :return:
         """
+        if self.edit_applied:
+            return
+
+        if filter_by_accepted and not self.edit_accepted:
+            return
+
         sequence = record.seq
         if self.edit_from == "N":
             self.edit_from = sequence[self.sequence_position + offset]
@@ -90,6 +96,9 @@ class Edit():
         :param offset: account for previously applied edits earlier in the sequence which
         :return:
         """
+        if not self.edit_applied:
+            return
+
         sequence = record.seq
         assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_to)]
                == self.edit_to)
@@ -154,7 +163,7 @@ class EditFile():
         """
         self.edits.sort()
 
-    def save(self, filepath, filter_by_applied=True):
+    def save(self, filepath, filter_by_applied=True, filter_by_accepted=False):
         """
         Save EditFile as a CSV
         :param filepath:
@@ -165,7 +174,7 @@ class EditFile():
             header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos", "edit_accepted"])
             f.write("%s\n" %header)
             for e in self.edits:
-                if not filter_by_applied or e.edit_applied:
+                if (not filter_by_applied or e.edit_applied) and (not filter_by_accepted or e.edit_accepted):
                     attributes = ','.join(
                         [str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
                          str(e.reference_position), str(e.edit_accepted)])

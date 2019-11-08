@@ -25,7 +25,8 @@ def run(options):
     )
     logging.info(msg)
     logging.info(
-        "Input parameters:\nDirectory: %s" %options.directory
+        "Input parameters:\nConsensus file: %s\nAlignment file: %s\nOutput file: %s\n"
+        %(options.consensus_file, options.alignment_file, options.output_file)
     )
 
     g = translate.Translate()
