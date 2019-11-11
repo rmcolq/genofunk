@@ -25,7 +25,8 @@ def run(options):
     )
     logging.info(msg)
     logging.info(
-        "Input parameters:\nDirectory: %s" %options.directory
+        "Input parameters:\nDirectory: %s\nEdit file: %s\nOutput file: %s" %(options.directory, options.edit_file,
+                                                                             options.output_file)
     )
 
     g = apply.Apply()

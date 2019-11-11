@@ -23,7 +23,7 @@ class Apply():
         :param filetype: if consensus sequence file not FASTA
         :return:
         """
-        self.consensus_sequence = []
+        self.consensus_sequence = {}
 
         edit_files = glob.glob("%s/*.edits" %directory)
         if len(edit_files) == 0:
@@ -35,25 +35,27 @@ class Apply():
                 logging.error("Paired consensus file %s does not exist!" % consensus_file)
                 assert(os.path.exists(consensus_file))
             logging.debug("Loading consensus file %s and edit file %s" %(consensus_file, edit_file))
-            self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
+            record_dict = SeqIO.index(consensus_file, filetype)
+            self.consensus_sequence.update(record_dict)
             logging.debug("Now have %d consensus records" %len(self.consensus_sequence))
 
 
     def load_input_files(self, directory, edit_filepath):
         self.load_consensus(directory)
         self.edits = EditFile(edit_filepath)
-        self.edits.sort()
+        self.edits.sort(reverse=True)
+        logging.debug("Now have %d sorted edits" % len(self.edits.edits))
 
-    def apply_loaded_edits(self, filter_by_accepted=False):
+    def apply_loaded_edits(self, filter_by_accepted=True):
         """
         Apply the edits to the consensus nucleotide sequences in place (in reverse order to avoid offset errors)
         :return:
         """
-        if len(self.edits.edits) == 0:
+        if not self.edits or len(self.edits.edits) == 0:
             return
-        for edit in self.edits.edits.reverse():
+        for edit in self.edits.edits:
             record = self.consensus_sequence[edit.sequence_id]
-            edit.apply_edit(record, filter_by_accepted)
+            edit.apply_edit(record, filter_by_accepted=filter_by_accepted)
 
     def save_updated_consensuses(self, filepath=None, coordinates=None, amino_acid=False):
         if filepath:
@@ -61,7 +63,8 @@ class Apply():
         else:
             out_handle = sys.stdout
 
-        for seq in self.consensus_sequence:
+        for seq_name in self.consensus_sequence:
+            seq = self.consensus_sequence[seq_name]
             assert (type(seq), Seq)
             if coordinates:
                 (start, end) = coordinates
@@ -76,7 +79,7 @@ class Apply():
                 new_seq.name = seq.name
                 new_seq.description = seq.description
                 seq = new_seq
-        SeqIO.write(seq, out_handle, "fasta")
+            SeqIO.write(seq, out_handle, "fasta")
 
         if filepath:
             out_handle.close()

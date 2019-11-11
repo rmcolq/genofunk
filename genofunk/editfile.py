@@ -77,8 +77,7 @@ class Edit():
         elif self.edit_from == "NN":
             self.edit_from = str(sequence[self.sequence_position + offset:self.sequence_position + offset + 2])
 
-        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
-               == self.edit_from)
+        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)] == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
         updated_sequence += self.edit_to 
         updated_sequence += sequence[self.sequence_position + offset + len(self.edit_from):]
@@ -156,12 +155,12 @@ class EditFile():
             e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"], edit_accepted)
             self.edits.append(e)
 
-    def sort(self):
+    def sort(self, reverse=False):
         """
         Sorts edits by reference_id, reference_position, edit_from, edit_to, sequence_id, sequence_position
         :return:
         """
-        self.edits.sort()
+        self.edits.sort(reverse=reverse)
 
     def save(self, filepath, filter_by_applied=True, filter_by_accepted=False):
         """
