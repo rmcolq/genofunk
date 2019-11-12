@@ -1,3 +1,6 @@
+![genofunk_logo][logo]
+
+[logo]: https://github.com/rmcolq/genofunk/blob/master/genofunk.png "Genofunk logo"
 # genofunk
 Funky tools for viral consensus sequences
 
