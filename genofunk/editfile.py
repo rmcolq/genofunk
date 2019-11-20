@@ -65,12 +65,16 @@ class Edit():
         :param offset: account for previously applied edits earlier in the sequence which
         :return:
         """
+        print("apply edit", self)
+        print(self.edit_applied)
         if self.edit_applied:
             return
 
+        print(filter_by_accepted, self.edit_accepted)
         if filter_by_accepted and not self.edit_accepted:
             return
 
+        logging.debug(record.id)
         sequence = record.seq
         if self.edit_from == "N":
             self.edit_from = sequence[self.sequence_position + offset]
