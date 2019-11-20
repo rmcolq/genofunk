@@ -137,7 +137,8 @@ class EditFile():
         :param edit:
         :return:
         """
-        self.edits.append(edit)
+        if edit not in self.edits:
+            self.edits.append(edit)
 
     def append(self, filepath):
         """

@@ -29,4 +29,4 @@ def run(options):
     )
 
     g = merge.Merge()
-    g.run(options.directory)
+    g.run(options.directory, options.features)

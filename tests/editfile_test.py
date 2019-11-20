@@ -230,6 +230,18 @@ class TestEditFile(unittest.TestCase):
         expect_editfile = EditFile(expect_file)
         self.assertEqual(editfile, expect_editfile)
 
+    def test_editfile_add_edit_twice(self):
+        e = Edit(0, 3, 'N', "", "hobbit", 5)
+
+        editfile1 = EditFile()
+        editfile1.add_edit(e)
+
+        editfile2 = EditFile()
+        editfile2.add_edit(e)
+        editfile2.add_edit(e)
+
+        self.assertEqual(editfile1, editfile2)
+
     def test_editfile_sort(self):
         file = os.path.join(data_dir, 'editfile1and2.csv')
         editfile = EditFile(file)

@@ -1,0 +1,5 @@
+1. Want to be able to run all steps for just a specific region of the ref corresponding to an annotated feature
+2. Handle rev complement features
+3. Handle rev complement reads
+4. Do we want to handle full codon deletions?
+5. What is expected behaviour if have overlapping features and different edits found in each?

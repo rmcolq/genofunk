@@ -85,6 +85,16 @@ def main(args=None):
     )
 
     subparser_merge.add_argument(
+        "-f",
+        "--features",
+        dest="features",
+        action="store",
+        type=str,
+        default=None,
+        help="Comma separated list of reference features to restrict to",
+    )
+
+    subparser_merge.add_argument(
         "-v",
         "--verbose",
         dest="verbose",

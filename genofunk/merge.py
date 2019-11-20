@@ -1,6 +1,7 @@
 import os
 import logging
 import glob
+import json
 from Bio import SeqIO
 
 from genofunk import editfile
@@ -12,6 +13,7 @@ class Merge():
     def __init__(self):
         self.consensus_sequence = None
         self.edits = None
+        self.coordinates=None
 
     def load_from_directory(self, directory, filetype="fasta"):
         """
@@ -23,6 +25,7 @@ class Merge():
         """
         self.consensus_sequence = []
         self.edits = EditFile()
+        self.coordinates = {}
 
         edit_files = glob.glob("%s/*.edits" %directory)
         if len(edit_files) == 0:
@@ -33,9 +36,17 @@ class Merge():
             if not os.path.exists(consensus_file):
                 logging.error("Paired consensus file %s does not exist!" % consensus_file)
                 assert(os.path.exists(consensus_file))
-            logging.debug("Loading consensus file %s and edit file %s" %(consensus_file, edit_file))
+            coordinates_file = edit_file.replace(".edits", ".coordinates")
+            if not os.path.exists(coordinates_file):
+                logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
+            logging.debug("Loading consensus file %s, edit file %s and coordinates file %s" %(consensus_file, edit_file, coordinates_file))
             self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
             self.edits.append(edit_file)
+            with open(coordinates_file) as json_file:
+                data = json.load(json_file)
+                for key in data:
+                    assert key not in self.coordinates
+                self.coordinates.update(data)
             logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence), len(self.edits.edits)))
 
         self.edits.sort()
@@ -126,7 +137,9 @@ class Merge():
                             self.query_edit(edit)
                 current_similar = [new_edit]
 
-    def run(self, directory):
+    def run(self, directory, features=""):
+        if features:
+            feature_list = features.split(",")
         self.load_from_directory(directory)
         self.find_common_edits()
         self.find_similar_edits()
