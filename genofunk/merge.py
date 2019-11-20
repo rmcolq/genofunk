@@ -15,7 +15,35 @@ class Merge():
         self.edits = None
         self.coordinates=None
 
-    def load_from_directory(self, directory, filetype="fasta"):
+    def load_coordinates_file(self, coordinates_file, features_list=None):
+        with open(coordinates_file) as json_file:
+            data = json.load(json_file)
+            for key in data:
+                if features_list and key not in features_list:
+                    continue
+                if key not in self.coordinates:
+                    self.coordinates[key] = {}
+                for record_name in data[key]:
+                    if record_name in self.coordinates[key]:
+                        logging.error(
+                            "Record name %s exists in multiple consensus files (and coordinates files). This will break things!" % record_name)
+                    assert record_name not in self.coordinates[key]
+                self.coordinates[key].update(data[key])
+
+    def load_edits_in_range(self, edit_file, features_list=None):
+        if not features_list:
+            self.edits.append(edit_file)
+            return
+
+        new_edits = EditFile(edit_file)
+        for edit in new_edits.edits:
+            for feature in self.coordinates:
+                if edit.sequence_id in self.coordinates[feature] and \
+                        self.coordinates[feature][edit.sequence_id]["start"] <= edit.read_pos <= \
+                        self.coordinates[feature][edit.sequence_id]["end"]:
+                    self.edits.add_edit(edit)
+
+    def load_from_directory(self, directory, filetype="fasta", features_list=None):
         """
         Looks for pairs of *.fasta, *.fasta.edit files in a directory, and loads them into a single big list of edits
         and a single big list of consensus sequences
@@ -40,13 +68,12 @@ class Merge():
             if not os.path.exists(coordinates_file):
                 logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
             logging.debug("Loading consensus file %s, edit file %s and coordinates file %s" %(consensus_file, edit_file, coordinates_file))
+
             self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
-            self.edits.append(edit_file)
-            with open(coordinates_file) as json_file:
-                data = json.load(json_file)
-                for key in data:
-                    assert key not in self.coordinates
-                self.coordinates.update(data)
+
+            self.load_coordinates_file(coordinates_file, features_list)
+
+            self.load_edits_in_range(edit_file, features_list)
             logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence), len(self.edits.edits)))
 
         self.edits.sort()
