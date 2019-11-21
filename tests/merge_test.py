@@ -1,4 +1,5 @@
 import os
+import json
 import unittest
 from unittest import mock
 
@@ -16,6 +17,30 @@ data_dir = os.path.join(this_dir, 'tests', 'data', 'merge')
 class TestMerge(unittest.TestCase):
     def setUp(self):
         self.m = merge.Merge()
+
+    def test_load_coordinates_file_does_not_exist(self):
+        coordinate_file = os.path.join(data_dir, "doesnt_exist.coordinates")
+        self.assertRaises(FileNotFoundError, self.m.load_coordinates_file, coordinate_file)
+
+    def test_load_coordinates_file_empty(self):
+        coordinate_file = os.path.join(data_dir, "empty.coordinates")
+        self.assertRaises(json.JSONDecodeError, self.m.load_coordinates_file, coordinate_file)
+
+    def test_load_coordinates_file_no_feature_list(self):
+        coordinate_file = os.path.join(data_dir, "simple.coordinates")
+        features_list = None
+        self.m.load_coordinates_file(coordinate_file, features_list)
+        expect_coordinates = {"ORF1": {"seq1": {"start": 0, "end": 90}, "seq3": {"start": 10, "end": 100}},
+                              "ORF2": {"seq2": {"start": 0, "end": 126}, "seq3": {"start": 10, "end": 136}}}
+        self.assertEqual(self.m.coordinates, expect_coordinates)
+
+    def test_load_coordinates_file_with_feature_list(self):
+        coordinate_file = os.path.join(data_dir, "simple.coordinates")
+        features_list = ["ORF1", "idontexistinasample"]
+        self.m.load_coordinates_file(coordinate_file, features_list)
+        expect_coordinates = {"ORF1": {"seq1": {"start": 0, "end": 90}, "seq3": {"start": 10, "end": 100}},
+                              "idontexistinasample": {}}
+        self.assertEqual(self.m.coordinates, expect_coordinates)
 
     def test_load_from_directory_empty(self):
         empty_dir = os.path.join(data_dir, "empty")

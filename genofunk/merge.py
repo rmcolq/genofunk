@@ -16,6 +16,16 @@ class Merge():
         self.coordinates=None
 
     def load_coordinates_file(self, coordinates_file, features_list=None):
+        if not os.path.exists(coordinates_file):
+            logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
+
+        self.coordinates = {}
+
+        if features_list:
+            for key in features_list:
+                if key not in self.coordinates:
+                    self.coordinates[key] = {}
+
         with open(coordinates_file) as json_file:
             data = json.load(json_file)
             for key in data:
@@ -26,7 +36,8 @@ class Merge():
                 for record_name in data[key]:
                     if record_name in self.coordinates[key]:
                         logging.error(
-                            "Record name %s exists in multiple consensus files (and coordinates files). This will break things!" % record_name)
+                            "Record name %s exists in multiple consensus files (and coordinates files). This will "
+                            "break things!" % record_name)
                     assert record_name not in self.coordinates[key]
                 self.coordinates[key].update(data[key])
 
@@ -53,7 +64,6 @@ class Merge():
         """
         self.consensus_sequence = []
         self.edits = EditFile()
-        self.coordinates = {}
 
         edit_files = glob.glob("%s/*.edits" %directory)
         if len(edit_files) == 0:
@@ -65,16 +75,14 @@ class Merge():
                 logging.error("Paired consensus file %s does not exist!" % consensus_file)
                 assert(os.path.exists(consensus_file))
             coordinates_file = edit_file.replace(".edits", ".coordinates")
-            if not os.path.exists(coordinates_file):
-                logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
-            logging.debug("Loading consensus file %s, edit file %s and coordinates file %s" %(consensus_file, edit_file, coordinates_file))
 
+            logging.debug("Loading consensus file %s, edit file %s and coordinates file %s" %(consensus_file, edit_file,
+                                                                                              coordinates_file))
             self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
-
             self.load_coordinates_file(coordinates_file, features_list)
-
             self.load_edits_in_range(edit_file, features_list)
-            logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence), len(self.edits.edits)))
+            logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence),
+                                                                         len(self.edits.edits)))
 
         self.edits.sort()
 
@@ -167,7 +175,9 @@ class Merge():
     def run(self, directory, features=""):
         if features:
             feature_list = features.split(",")
-        self.load_from_directory(directory)
+        else:
+            feature_list = None
+        self.load_from_directory(directory, feature_list)
         self.find_common_edits()
         self.find_similar_edits()
         self.edits.save("tmp.edits", filter_by_applied=False)
