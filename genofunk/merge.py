@@ -19,8 +19,6 @@ class Merge():
         if not os.path.exists(coordinates_file):
             logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
 
-        self.coordinates = {}
-
         if features_list:
             for key in features_list:
                 if key not in self.coordinates:
@@ -42,6 +40,8 @@ class Merge():
                 self.coordinates[key].update(data[key])
 
     def load_edits_in_range(self, edit_file, features_list=None):
+        assert self.coordinates
+
         if not features_list:
             self.edits.append(edit_file)
             return
@@ -50,7 +50,7 @@ class Merge():
         for edit in new_edits.edits:
             for feature in self.coordinates:
                 if edit.sequence_id in self.coordinates[feature] and \
-                        self.coordinates[feature][edit.sequence_id]["start"] <= edit.read_pos <= \
+                        self.coordinates[feature][edit.sequence_id]["start"] <= edit.sequence_position <= \
                         self.coordinates[feature][edit.sequence_id]["end"]:
                     self.edits.add_edit(edit)
 
@@ -62,6 +62,7 @@ class Merge():
         :param filetype: if consensus sequence file not FASTA
         :return:
         """
+        self.coordinates = {}
         self.consensus_sequence = []
         self.edits = EditFile()
 

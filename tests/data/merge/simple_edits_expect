@@ -1,0 +1,4 @@
+read_id,read_pos,from,to,ref_id,ref_pos,edit_accepted
+seq1,37,,N,hobbit,40,True
+seq1,67,t,,hobbit,70,True
+seq3,82,a,,hobbit,175,True
