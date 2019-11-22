@@ -4,7 +4,7 @@ import functools
 
 @functools.total_ordering
 class Edit():
-    def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position, edit_accepted=True, edit_applied=False):
+    def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position, edit_accepted=True, edit_applied=False, edit_query=False):
         self.sequence_id = sequence_id
         self.sequence_position = sequence_position
         self.edit_from = edit_from
@@ -13,6 +13,7 @@ class Edit():
         self.reference_position = reference_position
         self.edit_accepted = edit_accepted
         self.edit_applied = edit_applied
+        self.edit_query = edit_query
         
     def __repr__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
@@ -156,8 +157,12 @@ class EditFile():
             edit_accepted = True
             if 'edit_accepted' in data.columns:
                 edit_accepted = row['edit_accepted']
+            edit_query = False
+            if 'query' in data.columns:
+                edit_query = row['query']
 
-            e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"], edit_accepted)
+            e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"],
+                     edit_accepted=edit_accepted, edit_query=edit_query)
             self.edits.append(e)
 
     def sort(self, reverse=False):
@@ -167,6 +172,12 @@ class EditFile():
         """
         self.edits.sort(reverse=reverse)
 
+    def contains_query(self):
+        for edit in self.edits:
+            if edit.edit_query:
+                return True
+        return False
+
     def save(self, filepath, filter_by_applied=True, filter_by_accepted=False):
         """
         Save EditFile as a CSV
@@ -174,12 +185,19 @@ class EditFile():
         :param filter_by_applied: filter out edits which have not been applied? Default: True
         :return:
         """
+        columns = ["read_id", "read_pos", "from", "to", "ref_id", "ref_pos", "edit_accepted"]
+        if self.contains_query():
+            columns.append("query")
         with open(filepath, "w") as f:
-            header = ','.join(["read_id", "read_pos", "from", "to", "ref_id", "ref_pos", "edit_accepted"])
+            header = ','.join(columns)
             f.write("%s\n" %header)
             for e in self.edits:
                 if (not filter_by_applied or e.edit_applied) and (not filter_by_accepted or e.edit_accepted):
                     attributes = ','.join(
                         [str(e.sequence_id), str(e.sequence_position), e.edit_from, e.edit_to, e.reference_id,
                          str(e.reference_position), str(e.edit_accepted)])
+                    if self.contains_query() and e.edit_query:
+                        attributes += ",?"
+                    elif self.contains_query():
+                        attributes += ","
                     f.write("%s\n" %attributes)

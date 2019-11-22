@@ -85,6 +85,16 @@ def main(args=None):
     )
 
     subparser_merge.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        action="store",
+        type=str,
+        default="all.edits",
+        help="Output file name",
+    )
+
+    subparser_merge.add_argument(
         "-f",
         "--features",
         dest="features",
@@ -92,6 +102,24 @@ def main(args=None):
         type=str,
         default=None,
         help="Comma separated list of reference features to restrict to",
+    )
+
+    subparser_merge.add_argument(
+        "-m",
+        "--min_occurence",
+        dest="min_occurence",
+        action="store",
+        type=int,
+        default=2,
+        help="Minimum number of times an edit should occur to be queried",
+    )
+
+    subparser_merge.add_argument(
+        "-i",
+        "--interactive",
+        dest="interactive",
+        action="store_true",
+        help="Run script in interactive mode",
     )
 
     subparser_merge.add_argument(

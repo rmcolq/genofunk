@@ -54,7 +54,7 @@ class Merge():
                         self.coordinates[feature][edit.sequence_id]["end"]:
                     self.edits.add_edit(edit)
 
-    def load_from_directory(self, directory, filetype="fasta", features_list=None):
+    def load_from_directory(self, directory, features_list=None, filetype="fasta"):
         """
         Looks for pairs of *.fasta, *.fasta.edit files in a directory, and loads them into a single big list of edits
         and a single big list of consensus sequences
@@ -127,7 +127,11 @@ class Merge():
             else:
                 data = input("Not an appropriate choice. Do you wish to ignore them? [Y/n]")
 
-    def find_common_edits(self, min_occurrence=2):
+    def add_query_to_edits(self, edit_list):
+        for edit in edit_list:
+            edit.edit_query = True
+
+    def find_common_edits(self, min_occurrence=2, interactive=False):
         """
         Search for edits which occur with respect to the same reference at the same position and are of the same from/to
         form in multiple consensus records. Questions the user about accepting or ignoring each such case.
@@ -146,10 +150,13 @@ class Merge():
                 if len(current_identical) >= min_occurrence:
                     message = "Found %d identical edits like %s.\nThese are likely to be real (not " \
                               "caused by sequencing/assembly errors)." % (len(current_identical), current_identical[-1])
-                    self.query_edits(current_identical, message)
+                    if interactive:
+                        self.query_edits(current_identical, message)
+                    else:
+                        self.add_query_to_edits(current_identical)
                 current_identical = [new_edit]
 
-    def find_similar_edits(self, min_occurrence=2):
+    def find_similar_edits(self, min_occurrence=2, interactive=False):
         """
         Search for edits which occur with respect to the same reference at the same position but possibly with DIFFERENT
         to/from sequences in multiple consensus records. Questions the user about accepting or ignoring each such case.
@@ -160,25 +167,31 @@ class Merge():
         current_similar = []
         for new_edit in self.edits.edits:
             if len(current_similar) == 0 or (new_edit.reference_id == current_similar[-1].reference_id
-                                     and new_edit.reference_position == current_similar[-1].reference_position):
+                                             and new_edit.reference_position == current_similar[-1].reference_position):
                 current_similar.append(new_edit)
             else:
                 if len(current_similar) >= min_occurrence:
-                    print("Found %d similar edits:" %len(current_similar))
-                    for edit in current_similar:
-                        print(edit)
-                    print("These may be real or caused by sequencing/assembly errors")
-                    for edit in current_similar:
-                        if edit.edit_accepted:
-                            self.query_edit(edit)
+                    if interactive:
+                        print("Found %d similar edits:" %len(current_similar))
+                        for edit in current_similar:
+                            print(edit)
+                        print("These may be real or caused by sequencing/assembly errors")
+                        for edit in current_similar:
+                            if edit.edit_accepted:
+                                    self.query_edit(edit)
+                    else:
+                        self.add_query_to_edits(current_similar)
                 current_similar = [new_edit]
 
-    def run(self, directory, features=""):
+    def run(self, directory, output_file="all.edits", features="", min_occurence=2, interactive=False):
         if features:
             feature_list = features.split(",")
         else:
             feature_list = None
         self.load_from_directory(directory, feature_list)
-        self.find_common_edits()
-        self.find_similar_edits()
-        self.edits.save("tmp.edits", filter_by_applied=False)
+        self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
+        self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
+        if self.edits.contains_query():
+            self.edits.save("tmp.%s" % output_file, filter_by_applied=False)
+        else:
+            self.edits.save(output_file, filter_by_applied=False)
