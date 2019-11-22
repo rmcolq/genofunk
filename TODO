@@ -4,3 +4,12 @@
 4. Do we want to handle full codon deletions?
 5. What is expected behaviour if have overlapping features and different edits found in each?
 6. Update merge to not require user interaction, but iterative running until a condition satisfied
+
+
+
+MERGE:
+ - take tmp.all.edits as input
+ - remove tmp file when all queries addressed
+ - update docstrings for functions
+ - update tests
+ - update functions so no default parameters - defaults all specified on command line?
