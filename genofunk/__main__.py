@@ -215,6 +215,41 @@ def main(args=None):
     )
     subparser_translate.set_defaults(func=genofunk.subcommands.translate.run)
 
+    # _____________________________ refparser ______________________________#
+    subparser_refparser = subparsers.add_parser(
+        "refparser",
+        usage="genofunk refparser -g <genbank_file> [ -o <output_file> ]",
+        help="Converts a genbank file to a json file with the correct format",
+    )
+
+    subparser_refparser.add_argument(
+        "-g",
+        "--genbank_file",
+        dest="genbank_file",
+        action="store",
+        type=str,
+        help="Input file: a GENBANK file containing multiple references",
+    )
+
+    subparser_refparser.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        action="store",
+        type=str,
+        default=None,
+        help="Output file name",
+    )
+
+    subparser_refparser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        help="Run with high verbosity " "(debug level logging)",
+    )
+    subparser_refparser.set_defaults(func=genofunk.subcommands.refparser.run)
+
     args = parser.parse_args()
 
     if hasattr(args, "func"):

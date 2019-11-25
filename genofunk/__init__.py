@@ -5,6 +5,6 @@ try:
 except:
     __version__ = "local"
 
-__all__ = ["annotate", "merge", "apply", "translate", "subcommands", "editfile"]
+__all__ = ["annotate", "merge", "apply", "translate", "subcommands", "editfile", "refparser"]
 
 from genofunk import *

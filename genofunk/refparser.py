@@ -18,7 +18,7 @@ class ReferenceParser():
         # expected attributes (reference,sequence), (genes,(start,end,strand))
         self.reference_genbank = SeqIO.index(filepath, "genbank")
 
-    def identify_features(self, num_features=None):
+    def identify_features(self):
         for i in self.reference_genbank.keys():
             # print(i)
             locations = {}
@@ -60,7 +60,7 @@ class ReferenceParser():
         with open(filepath, 'w') as json_file:
             json.dump(self.reference_json, json_file)
 
-    def run(self, infilepath, outfilepath, num_features=None):
+    def run(self, infilepath, outfilepath):
         self.load_reference_genbank(infilepath)
-        self.identify_features(num_features)
+        self.identify_features()
         self.write_json(outfilepath)
