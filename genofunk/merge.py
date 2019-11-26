@@ -54,7 +54,7 @@ class Merge():
                         self.coordinates[feature][edit.sequence_id]["end"]:
                     self.edits.add_edit(edit)
 
-    def load_from_directory(self, directory, features_list=None, filetype="fasta"):
+    def load_from_directory(self, directory, tmp_edit_file=None, features_list=None, filetype="fasta"):
         """
         Looks for pairs of *.fasta, *.fasta.edit files in a directory, and loads them into a single big list of edits
         and a single big list of consensus sequences
@@ -81,10 +81,12 @@ class Merge():
                                                                                               coordinates_file))
             self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
             self.load_coordinates_file(coordinates_file, features_list)
-            self.load_edits_in_range(edit_file, features_list)
+            if not tmp_edit_file:
+                self.load_edits_in_range(edit_file, features_list)
             logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence),
                                                                          len(self.edits.edits)))
-
+        if tmp_edit_file:
+            self.load_edits_in_range(edit_file, features_list)
         self.edits.sort()
 
     def query_edit(self, edit):
@@ -185,10 +187,16 @@ class Merge():
 
     def run(self, directory, output_file="all.edits", features="", min_occurence=2, interactive=False):
         if features:
-            feature_list = features.split(",")
+            features_list = features.split(",")
         else:
-            feature_list = None
-        self.load_from_directory(directory, feature_list)
+            features_list = None
+
+        if os.path.exists("tmp.%s" % output_file):
+            tmp_edit_file = "tmp.%s" % output_file
+        else:
+            tmp_edit_file = None
+        self.load_from_directory(directory, tmp_edit_file=tmp_edit_file, features_list=features_list)
+
         self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
         self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
         if self.edits.contains_query():
