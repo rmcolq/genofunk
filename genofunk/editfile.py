@@ -158,8 +158,8 @@ class EditFile():
             if 'edit_accepted' in data.columns:
                 edit_accepted = row['edit_accepted']
             edit_query = False
-            if 'query' in data.columns:
-                edit_query = row['query']
+            if 'query' in data.columns and row['query'] == "?":
+                edit_query = True
 
             e = Edit(row["read_id"], row["read_pos"], edit_from, edit_to, row["ref_id"], row["ref_pos"],
                      edit_accepted=edit_accepted, edit_query=edit_query)

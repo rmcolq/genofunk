@@ -33,6 +33,7 @@ class TestEditFile(unittest.TestCase):
         self.assertEqual(e.reference_position, reference_position)
         self.assertEqual(e.edit_applied, False)
         self.assertEqual(e.edit_accepted, True)
+        self.assertEqual(e.edit_query, False)
 
 
     def test_edit_attributes_with_accepted(self):
@@ -52,6 +53,7 @@ class TestEditFile(unittest.TestCase):
         self.assertEqual(e.reference_position, reference_position)
         self.assertEqual(e.edit_applied, False)
         self.assertEqual(e.edit_accepted, False)
+        self.assertEqual(e.edit_query, False)
 
     def test_edit_missing_attribute(self):
         sequence_id = 8
@@ -228,6 +230,18 @@ class TestEditFile(unittest.TestCase):
 
         expect_file = os.path.join(data_dir, 'editfile1and2.csv')
         expect_editfile = EditFile(expect_file)
+        self.assertEqual(editfile, expect_editfile)
+
+    def test_editfile_load_with_query(self):
+        file = os.path.join(data_dir, 'editfile3.csv')
+        editfile = EditFile(file)
+
+        e1 = Edit("seq1_with_1_deletion", 37, "", "N", "hobbit", 40, True, False, True)
+        e2 = Edit("seq1_with_1_deletion_and_insertion", 37, "", "N", "hobbit", 40, True, False, False)
+        expect_editfile = EditFile()
+        expect_editfile.add_edit(e1)
+        expect_editfile.add_edit(e2)
+
         self.assertEqual(editfile, expect_editfile)
 
     def test_editfile_add_edit_twice(self):

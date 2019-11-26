@@ -1,0 +1,3 @@
+read_id,read_pos,from,to,ref_id,ref_pos,edit_accepted,query
+seq1_with_1_deletion,37,,N,hobbit,40,True,?
+seq1_with_1_deletion_and_insertion,37,,N,hobbit,40,True,
