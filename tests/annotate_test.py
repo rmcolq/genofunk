@@ -75,7 +75,7 @@ class TestAnnotate(unittest.TestCase):
     def test_load_consensus_no_file(self):
         consensus_filepath = os.path.join(data_dir, 'idontexist.fasta')
         a = annotate.Annotate("accession")
-        self.assertRaises(FileNotFoundError, a.load_consensus_sequence, consensus_filepath)
+        self.assertRaises(AssertionError, a.load_consensus_sequence, consensus_filepath)
 
     def test_load_consensus_empty_file(self):
         consensus_filepath = os.path.join(data_dir, 'empty_consensus.fasta')
@@ -488,8 +488,6 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         record_id = 6
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
-
-        print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),0)
 
     def test_discover_frame_shift_edits_mismatch_insertion_deletion_mismatch(self):
@@ -497,8 +495,6 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         record_id = 7
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
-
-        print(self.a.edits.edits)
         self.assertEqual(len(self.a.edits.edits),2)
 
     def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
@@ -506,8 +502,7 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         record_id = 8
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
-
-        print(self.a.edits.edits)
+        self.a.edits.sort()
         self.assertEqual(len(self.a.edits.edits),2)
 
     def test_discover_frame_shift_edits_3_insertions(self):
@@ -515,8 +510,7 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 126)
         record_id = 9
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, record_id)
-
-        print(self.a.edits.edits)
+        self.a.edits.sort()
         self.assertEqual(len(self.a.edits.edits),3)
         self.assertEqual(self.a.edits.edits[0].reference_position, 115)
 

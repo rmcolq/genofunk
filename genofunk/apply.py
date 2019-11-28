@@ -26,8 +26,11 @@ class Apply():
         self.consensus_sequence = {}
 
         edit_files = glob.glob("%s/*.edits" %directory)
+        logging.debug(edit_files)
+        logging.debug(edit_filepath)
         if edit_filepath:
             edit_files = list(filter(lambda x: not x.endswith(edit_filepath), edit_files))
+            logging.debug(edit_files)
         if len(edit_files) == 0:
             logging.error("No edit files found in directory %s" %directory)
             assert(len(edit_files) > 0)

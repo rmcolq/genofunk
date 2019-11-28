@@ -189,17 +189,17 @@ class TestEditFile(unittest.TestCase):
 
         e = Edit(record_id, 3, 'N', "", "hobbit", 5)
         e.apply_edit(self.consensus_sequence[record_id], 0)
-        e.remove_edit(self.consensus_sequence[record_id], 0)
+        e.remove_edit(self.consensus_sequence[record_id])
         self.assertEqual(str(original.seq), str(self.consensus_sequence[record_id].seq))
 
         e = Edit(record_id, 3, '', "N", "hobbit", 5)
         e.apply_edit(self.consensus_sequence[record_id], 1)
-        e.remove_edit(self.consensus_sequence[record_id], 1)
+        e.remove_edit(self.consensus_sequence[record_id])
         self.assertEqual(str(original.seq), str(self.consensus_sequence[record_id].seq))
 
         e = Edit(record_id, 3, '', "N", "hobbit", 5)
         e.apply_edit(self.consensus_sequence[record_id], -1)
-        e.remove_edit(self.consensus_sequence[record_id], -1)
+        e.remove_edit(self.consensus_sequence[record_id])
         self.assertEqual(str(original.seq), str(self.consensus_sequence[record_id].seq))
 
     def test_editfile_equals(self):

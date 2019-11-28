@@ -16,7 +16,7 @@ data_dir = os.path.join(this_dir, 'tests', 'data', 'apply')
 class TestApply(unittest.TestCase):
     def setUp(self):
         self.a = apply.Apply()
-        editfile = os.path.join(data_dir, 'consensus.fasta.edits')
+        editfile = os.path.join(data_dir, 'all.edits')
         self.a.load_input_files(data_dir, editfile)
 
     def test_load_consensus_empty_directory(self):
