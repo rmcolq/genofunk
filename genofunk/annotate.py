@@ -53,7 +53,7 @@ class Annotate:
         :return: records
         """
         logging.debug("Loading consensus %s %s" %(filetype,filepath))
-        if not filepath or os.path.exists(filepath):
+        if not filepath or not os.path.exists(filepath):
             logging.error("Consensus filepath %s does not exist!" %filepath)
             assert (filepath != None)
             assert(os.path.exists(filepath))
@@ -368,8 +368,8 @@ class Annotate:
         ref_sequence = self.get_reference_sequence(feature_coordinates, amino_acid=False)
         query_sequence = self.get_query_sequence(record_id, amino_acid=False)
         result = self.pairwise_ssw_align(ref_sequence, query_sequence)
-        logging.debug("Found score %s and cigar %s" %(result.score1, result.cigar))
-        if result.score1 > min_score:
+        if result and result.score1 > min_score:
+            logging.debug("Found score %s and cigar %s" % (result.score1, result.cigar))
             return result.read_begin1, result.read_end1+1
         else:
             return None, None
@@ -378,10 +378,10 @@ class Annotate:
                     shift_to, coordinate_difference=0):
         """
         Create a potential edit which applies a frame shift at a given position in the query sequence
-        :param feature_coordinates: coordinates of ORF in reference sequence
-        :param found_coordinates: corresponding coordinates for ORF in query sequence
+        :param feature_coordinates: coordinates of features in reference sequence
+        :param found_coordinates: corresponding coordinates for features in query sequence
         :param record_id:
-        :param ref_sequence: amino acid sequence of reference in ORF
+        :param ref_sequence: amino acid sequence of reference in features
         :param cigar_pairs: best amino acid alignment of query before frame shift
         :param shift_from:
         :param shift_to:
@@ -401,7 +401,7 @@ class Annotate:
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
-        e.remove_edit(self.consensus_sequence[record_id], coordinate_difference)
+        e.remove_edit(self.consensus_sequence[record_id])
 
         if self.is_improved_cigar_prefix(cigar_pairs, new_cigar_pairs):
             logging.debug("Keep frame shift as improvement")
@@ -416,10 +416,10 @@ class Annotate:
         """
         Compares the frame shifts obtained by inserting or deleting 1 or 2 letters in the nucleotide query sequence to
         see which if any returns the greatest improvement to the alignment cigar
-        :param feature_coordinates: coordinates of ORF in reference sequence
-        :param found_coordinates: corresponding coordinates for ORF in query sequence
+        :param feature_coordinates: coordinates of features in reference sequence
+        :param found_coordinates: corresponding coordinates for features in query sequence
         :param record_id:
-        :param ref_sequence: amino acid sequence of reference in ORF
+        :param ref_sequence: amino acid sequence of reference in features
         :param cigar_pairs: best amino acid alignment of query before frame shift
         :param coordinate_difference: amount to offset when applying frame shift (given that we want raw coordinates in
         query consensus sequence and it may have been updated with previously occurring frame shifts
@@ -446,17 +446,28 @@ class Annotate:
                 logging.debug("Override best with %d" %i)
 
         updated_coordinate_difference, cigar_pairs, updated, edit = frame_shift_results[best]
+        logging.debug("Found updated coordinate difference %d" %updated_coordinate_difference)
         edit.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
         self.edits.add_edit(edit)
 
         return updated_coordinate_difference, cigar_pairs, updated
+
+    def remove_all_edits(self, record_id=0):
+        if len(self.edits.edits) == 0:
+            return
+        record = self.consensus_sequence[record_id]
+        self.edits.edits.reverse()
+        for edit in self.edits.edits:
+            if edit.edit_applied:
+                edit.remove_edit(record)
+
     
     def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, record_id=0):
         """
         Gradually introduce frame shifts which improve the amino acid alignment prefix between reference and query
         sequences in an interval
-        :param feature_coordinates: coordinates of ORF in reference sequence
-        :param found_coordinates: corresponding coordinates for ORF in query sequence
+        :param feature_coordinates: coordinates of features in reference sequence
+        :param found_coordinates: corresponding coordinates for features in query sequence
         :param record_id:
         :return: pairwise alignment with frame shifts added
         """
@@ -478,6 +489,7 @@ class Annotate:
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)
+        self.remove_all_edits(record_id)
         return coordinate_difference
 
     def add_key_to_coordinate_dict(self, key):
@@ -494,7 +506,7 @@ class Annotate:
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
-        logging.info("Found ORF: %s " %self.reference_info["references"][self.closest_accession]["locations"])
+        logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
         for record_id in range(len(self.consensus_sequence)):
             logging.info("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
@@ -504,12 +516,14 @@ class Annotate:
                 coordinates = (value["start"], value["end"])
                 query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates, record_id=record_id)
                 if not query_end:
-                    logging.debug("No good alignment to ORF coordinates - skip this ORF/consensus combination")
+                    logging.debug("No good alignment to features coordinates - skip this features/consensus combination")
                     continue
-                logging.debug("Identified ORF coordinates (%d,%d)" % (query_start, query_end))
+                logging.debug("Identified features coordinates (%d,%d)" % (query_start, query_end))
                 coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end), record_id=record_id)
                 logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
                 self.coordinates[key][self.consensus_sequence[record_id].id] = {'start': query_start, 'end': query_end + coordinate_difference}
 
+
+
         self.save_found_coordinates(consensus_sequence_filepath + ".coordinates", write_format='w')
-        self.edits.save(consensus_sequence_filepath + ".edits")
+        self.edits.save(consensus_sequence_filepath + ".edits", filter_by_applied=False)

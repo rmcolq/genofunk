@@ -158,10 +158,10 @@ def main(args=None):
     subparser_apply.add_argument(
         "-o",
         "--output",
-        dest="output_file",
+        dest="output_prefix",
         action="store",
         type=str,
-        help="Output file name",
+        help="Output file prefix",
     )
 
     subparser_apply.add_argument(

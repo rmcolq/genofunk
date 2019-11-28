@@ -14,6 +14,7 @@ class Edit():
         self.edit_accepted = edit_accepted
         self.edit_applied = edit_applied
         self.edit_query = edit_query
+        self.offset = 0
         
     def __repr__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
@@ -66,12 +67,9 @@ class Edit():
         :param offset: account for previously applied edits earlier in the sequence which
         :return:
         """
-        print("apply edit", self)
-        print(self.edit_applied)
         if self.edit_applied:
             return
 
-        print(filter_by_accepted, self.edit_accepted)
         if filter_by_accepted and not self.edit_accepted:
             return
 
@@ -82,18 +80,25 @@ class Edit():
         elif self.edit_from == "NN":
             self.edit_from = str(sequence[self.sequence_position + offset:self.sequence_position + offset + 2])
 
-        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)] == self.edit_from)
+        logging.debug("Applying edit to sequence position %d and offset %d, converting %s=%s to %s"
+                      %(self.sequence_position, offset,
+                        sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)],
+                        self.edit_from, self.edit_to))
+        logging.debug("neighbourhood %s" %sequence[self.sequence_position + offset - 4:self.sequence_position + offset + len(self.edit_from) + 4])
+        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
+               == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
         updated_sequence += self.edit_to 
         updated_sequence += sequence[self.sequence_position + offset + len(self.edit_from):]
     
         record.seq = updated_sequence
         self.edit_applied = True
-        logging.debug("Applying edit changes")
-        logging.debug("Old: %s" %sequence)
-        logging.debug("New: %s" %updated_sequence)
+        self.offset = offset
+        #logging.debug("Applying edit changes")
+        #logging.debug("Old: %s" %sequence)
+        #logging.debug("New: %s" %updated_sequence)
         
-    def remove_edit(self, record, offset=0):
+    def remove_edit(self, record):
         """
         Removes the edit to the consensus nucleotide sequence in place.
         :param record: a Seq object
@@ -104,14 +109,20 @@ class Edit():
             return
 
         sequence = record.seq
-        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_to)]
+        logging.debug("Removing edit to sequence position %d and offset %d, converting %s=%s to %s"
+                      % (self.sequence_position, self.offset,
+                         sequence[self.sequence_position + self.offset:self.sequence_position + self.offset + len(self.edit_to)],
+                         self.edit_to, self.edit_from))
+        logging.debug("neighbourhood %s" % sequence[self.sequence_position + self.offset - 4:self.sequence_position + self.offset + len(self.edit_to) + 4])
+        assert(sequence[self.sequence_position + self.offset:self.sequence_position + self.offset + len(self.edit_to)]
                == self.edit_to)
-        updated_sequence = sequence[:self.sequence_position + offset]
+        updated_sequence = sequence[:self.sequence_position + self.offset]
         updated_sequence += self.edit_from 
-        updated_sequence += sequence[self.sequence_position + offset + len(self.edit_to):]
+        updated_sequence += sequence[self.sequence_position + self.offset + len(self.edit_to):]
     
         record.seq = updated_sequence
         self.edit_applied = False
+        self.offset = 0
         
 class EditFile():
     def __init__(self, filepath=None):
@@ -165,12 +176,17 @@ class EditFile():
                      edit_accepted=edit_accepted, edit_query=edit_query)
             self.edits.append(e)
 
-    def sort(self, reverse=False):
+    def sort(self, reverse=False, seq_position=False):
         """
         Sorts edits by reference_id, reference_position, edit_from, edit_to, sequence_id, sequence_position
         :return:
         """
-        self.edits.sort(reverse=reverse)
+        if seq_position:
+            self.edits = sorted(self.edits, key=lambda edit: edit.sequence_position, reverse=reverse)
+        else:
+            self.edits.sort(reverse=reverse)
+
+
 
     def contains_query(self):
         for edit in self.edits:

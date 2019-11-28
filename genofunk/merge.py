@@ -54,7 +54,7 @@ class Merge():
                         self.coordinates[feature][edit.sequence_id]["end"]:
                     self.edits.add_edit(edit)
 
-    def load_from_directory(self, directory, tmp_edit_file=None, features_list=None, filetype="fasta"):
+    def load_from_directory(self, directory, tmp_edit_file=None, edit_file=None, features_list=None, filetype="fasta"):
         """
         Looks for pairs of *.fasta, *.fasta.edit files in a directory, and loads them into a single big list of edits
         and a single big list of consensus sequences
@@ -67,6 +67,10 @@ class Merge():
         self.edits = EditFile()
 
         edit_files = glob.glob("%s/*.edits" %directory)
+        if tmp_edit_file:
+            edit_files = list(filter(lambda x: not x.endswith(tmp_edit_file), edit_files))
+        if edit_file:
+            edit_files = list(filter(lambda x: not x.endswith(edit_file), edit_files))
         if len(edit_files) == 0:
             logging.error("No edit files found in directory %s" %directory)
             assert(len(edit_files) > 0)
@@ -157,6 +161,13 @@ class Merge():
                     else:
                         self.add_query_to_edits(current_identical)
                 current_identical = [new_edit]
+        if len(current_identical) >= min_occurrence:
+            message = "Found %d identical edits like %s.\nThese are likely to be real (not " \
+                      "caused by sequencing/assembly errors)." % (len(current_identical), current_identical[-1])
+            if interactive:
+                self.query_edits(current_identical, message)
+            else:
+                self.add_query_to_edits(current_identical)
 
     def find_similar_edits(self, min_occurrence=2, interactive=False):
         """
@@ -184,6 +195,17 @@ class Merge():
                     else:
                         self.add_query_to_edits(current_similar)
                 current_similar = [new_edit]
+        if len(current_similar) >= min_occurrence:
+            if interactive:
+                print("Found %d similar edits:" % len(current_similar))
+                for edit in current_similar:
+                    print(edit)
+                print("These may be real or caused by sequencing/assembly errors")
+                for edit in current_similar:
+                    if edit.edit_accepted:
+                        self.query_edit(edit)
+            else:
+                self.add_query_to_edits(current_similar)
 
     def run(self, directory, output_file="all.edits", features="", min_occurence=2, interactive=False):
         if features:
@@ -195,7 +217,7 @@ class Merge():
             tmp_edit_file = "tmp.%s" % output_file
         else:
             tmp_edit_file = None
-        self.load_from_directory(directory, tmp_edit_file=tmp_edit_file, features_list=features_list)
+        self.load_from_directory(directory, tmp_edit_file=tmp_edit_file, edit_file=output_file, features_list=features_list)
 
         self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
         self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)

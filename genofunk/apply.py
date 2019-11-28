@@ -15,7 +15,7 @@ class Apply():
         self.consensus_sequence = None
         self.edits = None
 
-    def load_consensus(self, directory, filetype="fasta"):
+    def load_consensus(self, directory, edit_filepath=None, filetype="fasta"):
         """
         Looks for pairs of *.fasta, *.fasta.edit files in a directory, and loads the *.fasta them into a single big
          list of consensus sequences
@@ -26,6 +26,8 @@ class Apply():
         self.consensus_sequence = {}
 
         edit_files = glob.glob("%s/*.edits" %directory)
+        if edit_filepath:
+            edit_files = list(filter(lambda x: not x.endswith(edit_filepath), edit_files))
         if len(edit_files) == 0:
             logging.error("No edit files found in directory %s" %directory)
             assert(len(edit_files) > 0)
@@ -41,7 +43,7 @@ class Apply():
 
 
     def load_input_files(self, directory, edit_filepath):
-        self.load_consensus(directory)
+        self.load_consensus(directory, edit_filepath=edit_filepath)
         self.edits = EditFile(edit_filepath)
         self.edits.sort(reverse=True)
         logging.debug("Now have %d sorted edits" % len(self.edits.edits))
@@ -84,7 +86,8 @@ class Apply():
         if filepath:
             out_handle.close()
 
-    def run(self, directory, edit_filepath):
+    def run(self, directory, edit_filepath, output_prefix):
         self.load_input_files(directory, edit_filepath)
         self.apply_loaded_edits()
-        self.save_updated_consensuses()
+        self.save_updated_consensuses("%s.na.fasta" % output_prefix)
+        self.save_updated_consensuses("%s.aa.fasta" % output_prefix, amino_acid=True)
