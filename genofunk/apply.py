@@ -76,11 +76,12 @@ class Apply():
                     seq = seq + "NN"
                 elif len(seq) % 3 == 2:
                     seq = seq + "N"
-                new_seq = seq.translate()
+                new_seq = seq.translate(stop_symbol='X')
                 new_seq.id = seq.id
                 new_seq.name = seq.name
                 new_seq.description = seq.description
                 seq = new_seq
+                assert (len(seq)-1)*3 <= len(self.consensus_sequence[seq_name]) <= len(seq)*3
             SeqIO.write(seq, out_handle, "fasta")
 
         if filepath:

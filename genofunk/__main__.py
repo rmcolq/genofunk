@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 import genofunk
 
@@ -203,6 +204,7 @@ def main(args=None):
         dest="output_file",
         action="store",
         type=str,
+        default=sys.stdout,
         help="Output file name",
     )
 

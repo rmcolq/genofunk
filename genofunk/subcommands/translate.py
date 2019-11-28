@@ -30,4 +30,4 @@ def run(options):
     )
 
     g = translate.Translate()
-    g.run(options.consensus_file, options.alignment_file)
+    g.run(options.consensus_file, options.alignment_file, options.output_file)
