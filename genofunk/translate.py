@@ -46,25 +46,17 @@ class Translate():
         self.nucleotide_alignment = {}
         for record in self.amino_acid_alignment:
             nucleotide_sequence = self.consensus_sequences[record.id].seq
-            logging.debug("3 x alignment length %d is %d, at least nucleotide sequence length %d" % (len(record.seq),
-                                                                                            3*(len(record.seq)),
-                                                                                            len(nucleotide_sequence)))
-            no_dash = str(record.seq).replace("-","")
-            logging.debug("3 x alignment length %d is %d, at least nucleotide sequence length %d" % (len(no_dash),
-                                                                                                     3 * (len(no_dash)),
-                                                                                              len(nucleotide_sequence)))
             assert 3*(len(record.seq)) >= len(nucleotide_sequence)
             aligned_nucleotide_sequence = ""
             pos = 0
             for i,letter in enumerate(record.seq):
-                if letter == "-" and nucleotide_sequence[pos:pos+3] == "NNN":
-                    aligned_nucleotide_sequence += "---"
-                    pos += 3
-                elif letter == "-":
+                if letter == "-":
                     aligned_nucleotide_sequence += "---"
                 elif letter not in "*ACDEFGHIKLMNPQRSTVWXY":
                     print(letter)
                 else:
+                    while pos+3 > len(nucleotide_sequence):
+                        nucleotide_sequence += "-"
                     aligned_nucleotide_sequence += nucleotide_sequence[pos:pos+3]
                     pos += 3
                 #print(record.seq[:i+1])
@@ -77,10 +69,18 @@ class Translate():
             assert pos >= len(nucleotide_sequence)
             #break
 
+    def check_nucleotide_alignment_lengths(self):
+        lengths = list(set([len(self.nucleotide_alignment[i]) for i in self.nucleotide_alignment]))
+        if len(lengths) > 1:
+            logging.debug("Aligned nucleotide sequence lengths: %s" %",".join(lengths))
+            assert len(lengths) == 1
+
     def save_nucleotide_alignment(self, filepath):
+
         SeqIO.write([self.nucleotide_alignment[i] for i in self.nucleotide_alignment], filepath, "fasta")
 
     def run(self, consensus_filepath, alignment_filepath, output_filepath):
         self.load_input_files(consensus_filepath, alignment_filepath)
         self.generate_nucleotide_alignment()
+        self.check_nucleotide_alignment_lengths()
         self.save_nucleotide_alignment(output_filepath)
