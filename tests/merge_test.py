@@ -69,7 +69,6 @@ class TestMerge(unittest.TestCase):
         expect_edits = EditFile(expect_edit_file)
         self.assertEqual(self.m.edits, expect_edits)
 
-
     def test_load_from_directory_empty(self):
         empty_dir = os.path.join(data_dir, "empty")
         self.assertRaises(AssertionError, self.m.load_from_directory, empty_dir)
@@ -82,18 +81,287 @@ class TestMerge(unittest.TestCase):
         self.m.load_from_directory(data_dir)
         self.assertIsNotNone(self.m.edits)
         self.assertIsNotNone(self.m.consensus_sequence)
+        self.assertIsNotNone(self.m.coordinates)
         self.assertEqual(len(self.m.edits.edits), 14)
         self.assertEqual(len(self.m.consensus_sequence), 12)
+        print(self.m.coordinates)
+        self.assertEqual(len(self.m.coordinates), 2)
 
     def test_query_edit(self):
         self.m.edits = EditFile()
         self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
         e = self.m.edits.edits[0]
-        print(e)
         with mock.patch('builtins.input', return_value="y"):
             self.m.query_edit(e)
-            assert e.edit_accepted == False
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
 
         with mock.patch('builtins.input', return_value="n"):
             self.m.query_edit(e)
-            assert e.edit_accepted == True
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+
+    def test_query_edits(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        e = [self.m.edits.edits[0], self.m.edits.edits[1]]
+        with mock.patch('builtins.input', return_value="y"):
+            self.m.query_edits(e)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+
+        with mock.patch('builtins.input', return_value="n"):
+            self.m.query_edits(e)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+
+    def test_add_query_to_edits(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        e = [self.m.edits.edits[0], self.m.edits.edits[2]]
+        self.m.add_query_to_edits(e)
+        self.assertEqual(self.m.edits.edits[0].edit_query, True)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, True)
+
+    def test_find_common_edits_none(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.find_common_edits()
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, False)
+
+    def test_find_common_edits_last_2_common(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "c", "ref", 8))
+        self.m.find_common_edits()
+        assert self.m.edits.edits[0].edit_accepted == True
+        assert self.m.edits.edits[1].edit_accepted == True
+        assert self.m.edits.edits[2].edit_accepted == True
+        assert self.m.edits.edits[3].edit_accepted == True
+        assert self.m.edits.edits[0].edit_query == False
+        assert self.m.edits.edits[1].edit_query == False
+        assert self.m.edits.edits[2].edit_query == True
+        assert self.m.edits.edits[3].edit_query == True
+
+    def test_find_common_edits_last_2_common_interactive(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "c", "ref", 8))
+        with mock.patch('builtins.input', return_value="y"):
+            self.m.find_common_edits(interactive=True)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[3].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+            self.assertEqual(self.m.edits.edits[3].edit_query, False)
+        with mock.patch('builtins.input', return_value="n"):
+            self.m.find_common_edits(interactive=True)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[3].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+            self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_common_edits_last_2_common_min_3(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "c", "ref", 8))
+        self.m.find_common_edits(min_occurrence=3)
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[3].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, False)
+        self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_similar_edits_none(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.find_similar_edits()
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, False)
+
+    def test_find_similar_edits_last_2_similar(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        self.m.find_similar_edits()
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[3].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, True)
+        self.assertEqual(self.m.edits.edits[3].edit_query, True)
+
+    def test_find_similar_edits_last_2_similar_interactive_yy(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        mymock = mock.Mock()
+        mymock.side_effect = ['y', 'y']
+        with mock.patch('builtins.input', mymock):
+            self.m.find_similar_edits(interactive=True)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[3].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+            self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_similar_edits_last_2_similar_interactive_yn(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        mymock = mock.Mock()
+        mymock.side_effect = ['y', 'n']
+        with mock.patch('builtins.input', mymock):
+            self.m.find_similar_edits(interactive=True)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[3].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+            self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_similar_edits_last_2_similar_interactive_ny(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        mymock = mock.Mock()
+        mymock.side_effect = ['n', 'y']
+        with mock.patch('builtins.input', mymock):
+            self.m.find_similar_edits(interactive=True)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[3].edit_accepted, False)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+            self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_similar_edits_last_2_similar_interactive_nn(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        mymock = mock.Mock()
+        mymock.side_effect = ['n', 'n']
+        with mock.patch('builtins.input', mymock):
+            self.m.find_similar_edits(interactive=True)
+            self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[3].edit_accepted, True)
+            self.assertEqual(self.m.edits.edits[0].edit_query, False)
+            self.assertEqual(self.m.edits.edits[1].edit_query, False)
+            self.assertEqual(self.m.edits.edits[2].edit_query, False)
+            self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_similar_edits_last_2_similar_min_3(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        self.m.find_similar_edits(min_occurrence=3)
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[3].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, False)
+        self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_run_output_file_exists(self):
+        self.assertRaises(AssertionError, self.m.run, data_dir, output_file="%s/consensus.fasta.edits" % data_dir)
+
+    def test_run_output_file_defaults(self):
+        tmp_file = os.path.join(data_dir, 'tmp.all.edits')
+        self.m.run(data_dir, output_file="%s/all.edits" % data_dir)
+        expect_file = os.path.join(data_dir, 'expected_edits')
+        self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
+        #os.unlink(tmp_file)
+
+    def test_run_output_file_tmp_exists(self):
+        test_dir = "%s/tmp_exists" %data_dir
+        tmp_file = os.path.join(test_dir, 'all.edits')
+        self.m.run(test_dir, output_file=tmp_file)
+        expect_file = os.path.join(test_dir, 'expected_edits')
+        self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
+        #os.unlink(tmp_file)
+
+    def test_run_output_file_with_features(self):
+        pass
+
+    def test_run_output_file_save_tmp(self):
+        pass
+
+    def test_run_output_file_save_output_file(self):
+        pass

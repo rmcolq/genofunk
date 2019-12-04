@@ -8,8 +8,5 @@
 
 
 MERGE:
- - take tmp.all.edits as input
- - remove tmp file when all queries addressed
- - update docstrings for functions
  - update tests
  - update functions so no default parameters - defaults all specified on command line?
