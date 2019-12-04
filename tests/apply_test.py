@@ -40,14 +40,16 @@ class TestApply(unittest.TestCase):
 
     def test_apply_loaded_edits_edits_none(self):
         a = apply.Apply()
-        a.load_consensus(data_dir)
+        editfile = os.path.join(data_dir, "all.edits")
+        a.load_consensus(data_dir, edit_filepath=editfile)
         a.apply_loaded_edits()
         for name in a.consensus_sequence:
             self.assertEqual(a.consensus_sequence[name].seq, self.a.consensus_sequence[name].seq)
 
     def test_apply_loaded_edits_edits_empty(self):
         a = apply.Apply()
-        a.load_consensus(data_dir)
+        editfile = os.path.join(data_dir, "all.edits")
+        a.load_consensus(data_dir, edit_filepath=editfile)
         a.edits = EditFile()
         a.apply_loaded_edits()
         for name in a.consensus_sequence:
@@ -124,7 +126,7 @@ class TestApply(unittest.TestCase):
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
         os.unlink(tmp_file)
 
-    def test_save_updated_consensuses_na(self):
+    def test_save_updated_consensuses_aa(self):
         self.a.apply_loaded_edits(filter_by_accepted=False)
         tmp_file = os.path.join(data_dir, 'updated_aa_consensus.fasta')
         self.a.save_updated_consensuses(filepath=tmp_file, amino_acid=True)
