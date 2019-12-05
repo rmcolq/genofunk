@@ -12,7 +12,7 @@ Edit = editfile.Edit
 class Merge():
     def __init__(self):
         self.edits = None
-        self.coordinates=None
+        self.coordinates = None
 
     def load_coordinates_file(self, coordinates_file, features_list=None):
         """
@@ -60,7 +60,7 @@ class Merge():
         :param features_list: list of features named in reference JSON to restrict to
         :return:
         """
-        assert self.coordinates
+        assert self.coordinates is not None
 
         if not features_list:
             self.edits.append(edit_file)

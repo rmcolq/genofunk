@@ -1,0 +1,9 @@
+read_id,read_pos,from,to,ref_id,ref_pos,edit_accepted
+seq1,37,,N,hobbit,40,True
+seq1,67,t,,hobbit,70,True
+seq1,93,,N,hobbit,40,True
+seq2,22,a,,hobbit,115,True
+seq2,37,c,,hobbit,130,True
+seq3,8,,NN,hobbit,64,True
+seq3,82,a,,hobbit,175,True
+seq1,122,a,,hobbit,25,True

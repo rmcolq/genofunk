@@ -157,6 +157,15 @@ def main(args=None):
         help="CSV file containing edits already found for this sample"
     )
     subparser_apply.add_argument(
+        "-f",
+        "--features",
+        dest="features",
+        action="store",
+        type=str,
+        default=None,
+        help="Comma separated list of reference features to restrict to",
+    )
+    subparser_apply.add_argument(
         "-o",
         "--output",
         dest="output_prefix",

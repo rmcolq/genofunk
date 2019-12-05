@@ -15,7 +15,7 @@ class Apply():
     def __init__(self):
         self.consensus_sequence = None
         self.edits = None
-        self.coordinates=None
+        self.coordinates = None
 
     def load_coordinates_file(self, coordinates_file, features_list=None):
         """
@@ -25,10 +25,11 @@ class Apply():
         :param features_list: list of features named in reference JSON to restrict to
         :return:
         """
-        assert self.coordinates
+        assert self.coordinates is not None
 
         if not os.path.exists(coordinates_file):
             logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
+            assert (os.path.exists(coordinates_file))
 
         if features_list:
             for key in features_list:
@@ -53,13 +54,20 @@ class Apply():
 
     def load_consensus_file(self, consensus_file, filetype="fasta"):
 
-        assert self.consensus_sequence
+        assert self.consensus_sequence is not None
 
         if not os.path.exists(consensus_file):
             logging.error("Paired consensus file %s does not exist!" % consensus_file)
             assert (os.path.exists(consensus_file))
 
         record_dict = SeqIO.index(consensus_file, filetype)
+        assert len(record_dict) > 0
+        for key in record_dict:
+            if key in self.consensus_sequence:
+                logging.error(
+                    "Record name %s exists in multiple consensus files. This will "
+                    "break things!" % key)
+            assert key not in self.consensus_sequence
         self.consensus_sequence.update(record_dict)
         logging.debug("After loading consensus file %s, we have %d consensus records " % (consensus_file,
                                                                                           len(self.consensus_sequence)))
@@ -72,7 +80,7 @@ class Apply():
         :param features_list: list of features named in reference JSON to restrict to
         :return:
         """
-        assert self.coordinates
+        assert self.coordinates is not None
 
         if not features_list:
             self.edits = EditFile(edit_file)
@@ -136,7 +144,7 @@ class Apply():
 
         for seq_name in self.consensus_sequence:
             seq = self.consensus_sequence[seq_name]
-            assert (type(seq), Seq)
+            assert type(seq), Seq
             if feature:
                 if seq_name not in self.coordinates[feature]:
                     continue
