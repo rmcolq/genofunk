@@ -39,7 +39,6 @@ class Apply():
         with open(coordinates_file) as json_file:
             data = json.load(json_file)
             for key in data:
-                print(key)
                 if features_list and key not in features_list:
                     continue
                 if key not in self.coordinates:
@@ -94,7 +93,7 @@ class Apply():
                             self.coordinates[feature][edit.sequence_id]["end"]:
                         self.edits.add_edit(edit)
 
-        self.edits.sort(reverse=True)
+        self.edits.sort(reverse=True, seq_position=True)
         logging.debug("Now have %d sorted edits" % len(self.edits.edits))
 
     def load_input_files(self, directory, edit_filepath, features_list=None, filetype="fasta"):

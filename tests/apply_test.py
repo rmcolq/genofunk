@@ -171,7 +171,7 @@ class TestApply(unittest.TestCase):
         self.assertEqual(str(self.a.consensus_sequence["seq1_with_1_deletion"].seq),
                          "attaacgcgcatctggaaattaacacccatgaaggccNcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         self.assertEqual(str(self.a.consensus_sequence["seq1_with_1_deletion_and_insertion"].seq),
-                         "attaacgcgcatctggaaattaacacccatgaaggcccaacgatacccatgaacgcgaactgatttgggaagatgcgcatattacctaa")
+                         "attaacgcgcatctggaaattaacacccatgaaggccNcaacgatacccatgaacgcgaactgatttgggaagatgcgcatattacctaa")
         self.assertEqual(str(self.a.consensus_sequence["seq1_with_1_deletion_and_mismatch"].seq),
                          "attaacgcgcatctggaaattaacacccatgaaggccNcaacgatacccatgaacgcgaacagattgtggaagatgcgcatattacctaa")
         self.assertEqual(str(self.a.consensus_sequence["seq1_with_2_deletions"].seq),
@@ -185,14 +185,14 @@ class TestApply(unittest.TestCase):
         self.assertEqual(str(self.a.consensus_sequence["seq1_with_mismatch_insertion_deletion_mismatch"].seq),
                          "attaacgcgcatctggtaattaacacccatgaNggccgcaacgatacccatgaacgcgaagtgattgtggaagatgcgcatattacctaa")
         self.assertEqual(str(self.a.consensus_sequence["seq1_with_double_deletion_mismatch_insertion"].seq),
-                         "attaacgcgcatctggattaacacccatgaaggccccaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
+                         "attaacgcgcatctggNNattaacacccatgaaggccccaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         self.assertEqual(str(self.a.consensus_sequence["seq2_with_3_insertions"].seq),
                          "aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccatgaagaaaacgatagcttttggcgcatgagctaa")
         num_applied = 0
         for edit in self.a.edits.edits:
             if edit.edit_applied:
                 num_applied += 1
-        self.assertEqual(num_applied, 12)
+        self.assertEqual(num_applied, 14)
 
     def test_apply_loaded_edits_no_filter_by_accepted(self):
         self.a.apply_loaded_edits(filter_by_accepted=False)
@@ -239,3 +239,31 @@ class TestApply(unittest.TestCase):
         expect_file = os.path.join(data_dir, 'expect_updated_aa_consensus.fasta')
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
         os.unlink(tmp_file)
+
+    def test_run_no_features(self):
+        a = apply.Apply()
+        editfile = os.path.join(data_dir, 'all.edits')
+        tmp_prefix = os.path.join(data_dir, 'tmp')
+        a.run(data_dir, editfile, tmp_prefix, features="")
+        tmp_na_file = os.path.join(data_dir, 'tmp.na.fasta')
+        expect_na_file = os.path.join(data_dir, 'expect_updated_na_consensus.fasta')
+        self.assertTrue(filecmp.cmp(tmp_na_file, expect_na_file, shallow=False))
+        os.unlink(tmp_na_file)
+        tmp_aa_file = os.path.join(data_dir, 'tmp.aa.fasta')
+        expect_aa_file = os.path.join(data_dir, 'expect_updated_aa_consensus.fasta')
+        self.assertTrue(filecmp.cmp(tmp_aa_file, expect_aa_file, shallow=False))
+        os.unlink(tmp_aa_file)
+
+    def test_run_with_features(self):
+        a = apply.Apply()
+        editfile = os.path.join(data_dir, 'all.edits')
+        tmp_prefix = os.path.join(data_dir, 'tmp')
+        a.run(data_dir, editfile, tmp_prefix, features="ORF1")
+        tmp_na_file = os.path.join(data_dir, 'tmp.na.fasta')
+        expect_na_file = os.path.join(data_dir, 'expect_updated_na_consensus_ORF1.fasta')
+        self.assertTrue(filecmp.cmp(tmp_na_file, expect_na_file, shallow=False))
+        os.unlink(tmp_na_file)
+        tmp_aa_file = os.path.join(data_dir, 'tmp.aa.fasta')
+        expect_aa_file = os.path.join(data_dir, 'expect_updated_aa_consensus_ORF1.fasta')
+        self.assertTrue(filecmp.cmp(tmp_aa_file, expect_aa_file, shallow=False))
+        os.unlink(tmp_aa_file)
