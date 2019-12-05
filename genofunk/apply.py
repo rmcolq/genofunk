@@ -52,6 +52,12 @@ class Apply():
                 self.coordinates[key].update(data[key])
 
     def load_consensus_file(self, consensus_file, filetype="fasta"):
+        """
+        Loads a consensus file for a sample, checking for non-unique record ids with existing consensus records
+        :param consensus_file: FASTA file for a sample
+        :param filetype: (Default: FASTA)
+        :return:
+        """
 
         assert self.consensus_sequence is not None
 
@@ -74,7 +80,7 @@ class Apply():
     def load_edits_in_range(self, edit_file, features_list=None):
         """
         Loads list of edits from an editfile and appends them to self.edits. If a features_list is provided, only loads
-        edits that lie within the coordinate range for those features
+        edits that lie within the coordinate range for those features. Sorts edits in reverse order by sequence position
         :param edit_file:
         :param features_list: list of features named in reference JSON to restrict to
         :return:
@@ -99,7 +105,7 @@ class Apply():
     def load_input_files(self, directory, edit_filepath, features_list=None, filetype="fasta"):
         """
         Looks for pairs of *.fasta, *.fasta.edit, *.fasta.coordinates files in a directory, and loads them into single
-        big lists of consensus_sequences and coordinates
+        big lists of consensus_sequences and coordinates and edits
         :param directory:
         :param filetype: if consensus sequence file not FASTA
         :return:
@@ -124,7 +130,7 @@ class Apply():
 
     def apply_loaded_edits(self, filter_by_accepted=True):
         """
-        Apply the edits to the consensus nucleotide sequences in place (in reverse order to avoid offset errors)
+        Apply the edits to the consensus nucleotide sequences in place (assumes reverse order to avoid offset errors)
         :return:
         """
         if not self.edits or len(self.edits.edits) == 0:
@@ -134,6 +140,13 @@ class Apply():
             edit.apply_edit(record, filter_by_accepted=filter_by_accepted)
 
     def save_updated_consensuses(self, filepath=None, feature=None, amino_acid=False):
+        """
+        Save new consensus sequences with edits applied to file, restricting to a feature or translating as required
+        :param filepath: output file name (Default : stdout)
+        :param feature: an optional named feature to restrict to (Default:None)
+        :param amino_acid: translate to amino acid sequence (Default:False)
+        :return:
+        """
         if filepath:
             out_handle = open(filepath, 'w')
         else:
@@ -166,6 +179,15 @@ class Apply():
             out_handle.close()
 
     def run(self, directory, edit_filepath, output_prefix, features=""):
+        """
+        Applies accepted edits from a list to consensus sequences and outputs both nucleotide and amino acid FASTA files
+        for alignment. If a list of features is provided, outputs a file pair per feature.
+        :param directory: directory containing *.fasta, *.fasta.edits, *.fasta.coordinates pairs
+        :param edit_filepath: file containing merged edits
+        :param output_prefix: prefix for output file names
+        :param features: comma separated list of reference features to restrict to
+        :return:
+        """
         if features:
             features_list = features.split(",")
         else:
@@ -175,8 +197,8 @@ class Apply():
 
         if features_list:
             for feature in features_list:
-                self.save_updated_consensuses("%s.na.fasta" % output_prefix, feature=feature)
-                self.save_updated_consensuses("%s.aa.fasta" % output_prefix, feature=feature, amino_acid=True)
+                self.save_updated_consensuses("%s.%s.na.fasta" % (output_prefix, feature), feature=feature)
+                self.save_updated_consensuses("%s.%s.aa.fasta" % (output_prefix, feature), feature=feature, amino_acid=True)
         else:
             self.save_updated_consensuses("%s.na.fasta" % output_prefix)
             self.save_updated_consensuses("%s.aa.fasta" % output_prefix, amino_acid=True)
