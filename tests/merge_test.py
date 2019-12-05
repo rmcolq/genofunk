@@ -356,6 +356,7 @@ class TestMerge(unittest.TestCase):
         expect_file = os.path.join(test_dir, 'expected_edits')
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
         os.unlink(tmp_file)
+        self.m.run(test_dir, output_file=tmp_file)
 
     def test_run_output_file_with_features(self):
         tmp_file = os.path.join(data_dir, 'tmp.all.edits')
@@ -364,8 +365,9 @@ class TestMerge(unittest.TestCase):
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
         os.unlink(tmp_file)
 
-    def test_run_output_file_save_tmp(self):
-        pass
-
     def test_run_output_file_save_output_file(self):
-        pass
+        tmp_file = os.path.join(data_dir, 'all.edits')
+        self.m.run(data_dir, output_file="%s/all.edits" % data_dir, min_occurence=10)
+        expect_file = os.path.join(data_dir, 'expected_edits_no_tmp_needed')
+        self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
+        os.unlink(tmp_file)
