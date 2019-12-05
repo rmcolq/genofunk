@@ -198,7 +198,8 @@ class Apply():
         if features_list:
             for feature in features_list:
                 self.save_updated_consensuses("%s.%s.na.fasta" % (output_prefix, feature), feature=feature)
-                self.save_updated_consensuses("%s.%s.aa.fasta" % (output_prefix, feature), feature=feature, amino_acid=True)
+                self.save_updated_consensuses("%s.%s.aa.fasta" % (output_prefix, feature), feature=feature,
+                                              amino_acid=True)
         else:
             self.save_updated_consensuses("%s.na.fasta" % output_prefix)
             self.save_updated_consensuses("%s.aa.fasta" % output_prefix, amino_acid=True)

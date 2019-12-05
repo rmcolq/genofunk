@@ -50,7 +50,8 @@ class Translate():
         """
         self.load_consensus(consensus_filepath)
         self.load_alignment(alignment_filepath)
-        logging.debug("Found %d consensus sequences and %d alignment sequences" %(int(len(self.consensus_sequences)), int(len(self.amino_acid_alignment))))
+        logging.debug("Found %d consensus sequences and %d alignment sequences" %(int(len(self.consensus_sequences)),
+                                                                                  int(len(self.amino_acid_alignment))))
         if int(len(self.consensus_sequences)) != int(len(self.amino_acid_alignment)):
             logging.error("Alignment file and consensus file contain different numbers of sequences!")
             assert(len(self.consensus_sequences) == len(self.amino_acid_alignment))

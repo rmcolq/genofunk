@@ -514,14 +514,17 @@ class Annotate:
                 logging.info("Find edits for %s, %s" %(key,value))
                 self.add_key_to_coordinate_dict(key)
                 coordinates = (value["start"], value["end"])
-                query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates, record_id=record_id)
+                query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates,
+                                                                           record_id=record_id)
                 if not query_end:
-                    logging.debug("No good alignment to features coordinates - skip this features/consensus combination")
+                    logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
                     continue
                 logging.debug("Identified features coordinates (%d,%d)" % (query_start, query_end))
-                coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end), record_id=record_id)
+                coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end),
+                                                                        record_id=record_id)
                 logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
-                self.coordinates[key][self.consensus_sequence[record_id].id] = {'start': query_start, 'end': query_end + coordinate_difference}
+                self.coordinates[key][self.consensus_sequence[record_id].id] = {'start': query_start, 'end':
+                    query_end + coordinate_difference}
 
 
 

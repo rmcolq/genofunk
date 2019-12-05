@@ -4,7 +4,8 @@ import functools
 
 @functools.total_ordering
 class Edit():
-    def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position, edit_accepted=True, edit_applied=False, edit_query=False):
+    def __init__(self, sequence_id, sequence_position, edit_from, edit_to, reference_id, reference_position,
+                 edit_accepted=True, edit_applied=False, edit_query=False):
         self.sequence_id = sequence_id
         self.sequence_position = sequence_position
         self.edit_from = edit_from
@@ -84,7 +85,8 @@ class Edit():
                       %(self.sequence_position, offset,
                         sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)],
                         self.edit_from, self.edit_to))
-        logging.debug("neighbourhood %s" %sequence[self.sequence_position + offset - 4:self.sequence_position + offset + len(self.edit_from) + 4])
+        logging.debug("neighbourhood %s" %sequence[self.sequence_position + offset - 4:self.sequence_position + offset
+                                                                                       + len(self.edit_from) + 4])
         assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
                == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
@@ -111,9 +113,12 @@ class Edit():
         sequence = record.seq
         logging.debug("Removing edit to sequence position %d and offset %d, converting %s=%s to %s"
                       % (self.sequence_position, self.offset,
-                         sequence[self.sequence_position + self.offset:self.sequence_position + self.offset + len(self.edit_to)],
+                         sequence[self.sequence_position + self.offset:self.sequence_position + self.offset
+                                                                       + len(self.edit_to)],
                          self.edit_to, self.edit_from))
-        logging.debug("neighbourhood %s" % sequence[self.sequence_position + self.offset - 4:self.sequence_position + self.offset + len(self.edit_to) + 4])
+        logging.debug("neighbourhood %s" % sequence[self.sequence_position + self.offset - 4:self.sequence_position
+                                                                                             + self.offset
+                                                                                             + len(self.edit_to) + 4])
         assert(sequence[self.sequence_position + self.offset:self.sequence_position + self.offset + len(self.edit_to)]
                == self.edit_to)
         updated_sequence = sequence[:self.sequence_position + self.offset]
