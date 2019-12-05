@@ -160,8 +160,7 @@ class Merge():
     def find_common_edits(self, min_occurrence=2, interactive=False):
         """
         Search for edits which occur with respect to the same reference at the same position and are of the same from/to
-        form in multiple consensus records. Questions the user about accepting or ignoring each such case. Note this
-        process ignores edits which have already been flagged to query
+        form in multiple consensus records. Questions the user about accepting or ignoring each such case.
         :param min_occurrence: minimum number of times to see an edit to question it (Default:2)
         :param interactive: run in interactive mode expecting user command line responses (Default:False)
         :return:
@@ -169,9 +168,6 @@ class Merge():
         self.edits.sort()
         current_identical = []
         for new_edit in self.edits.edits:
-            if new_edit.edit_query:
-                new_edit.edit_query=False
-                continue
             if len(current_identical) == 0 or (new_edit.reference_id == current_identical[-1].reference_id
                                      and new_edit.reference_position == current_identical[-1].reference_position
                                      and new_edit.edit_from == current_identical[-1].edit_from
@@ -198,7 +194,6 @@ class Merge():
         """
         Search for edits which occur with respect to the same reference at the same position but possibly with DIFFERENT
         to/from sequences in multiple consensus records. Questions the user about accepting or ignoring each such case.
-        Note this process ignores edits which have already been flagged to query
         :param min_occurrence: minimum number of times to see an edit to question it (Default:2)
         :param interactive: run in interactive mode expecting user command line responses (Default:False)
         :return:
@@ -206,9 +201,6 @@ class Merge():
         self.edits.sort()
         current_similar = []
         for new_edit in self.edits.edits:
-            if new_edit.edit_query:
-                new_edit.edit_query=False
-                continue
             if len(current_similar) == 0 or (new_edit.reference_id == current_similar[-1].reference_id
                                              and new_edit.reference_position == current_similar[-1].reference_position):
                 current_similar.append(new_edit)
@@ -240,12 +232,12 @@ class Merge():
     def run(self, directory, output_file="all.edits", features="", min_occurence=2, interactive=False):
         """
         Loads edit files from directory and merges into one file. In the process, flags edits which should probably
-        be ignored because they may be real features. Outputs a `tmp` file if there are edits to manually query.
+        be ignored because they may be real features. Outputs a `tmp` file if there are edits to manually query. Once
+        no more edits are flagged to query, outputs the required combined edit file.
 
         If the `tmp` file exists, assumes that the user has checked it and changed whether the queried edits have been
-        accepted as appropriate. Ignores all previously queried edits (and sets to no longer queried).
+        accepted as appropriate. Outputs a final edit file.
 
-        Once no more edits are flagged to query, outputs the required combined edit file.
         :param directory: directory containing *.fasta, *.fasta.coordinates, *.fasta.edits files to merge
         :param output_file: name of final edit file
         :param features: comma separated list of named features to restrict to
@@ -265,11 +257,14 @@ class Merge():
         tmp_edit_file = "%s/tmp.%s" %(os.path.dirname(output_file), os.path.basename(output_file))
         if os.path.exists(tmp_edit_file):
             self.load_from_directory(directory, tmp_edit_file=tmp_edit_file, features_list=features_list)
+            for edit in self.edits.edits:
+                if edit.edit_query:
+                    edit.edit_query = False
         else:
             self.load_from_directory(directory, tmp_edit_file=None, features_list=features_list)
+            self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
+            self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
 
-        self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
-        self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
         if self.edits.contains_query():
             self.edits.save(tmp_edit_file, filter_by_applied=False)
         else:

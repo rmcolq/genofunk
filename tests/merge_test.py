@@ -347,7 +347,7 @@ class TestMerge(unittest.TestCase):
         self.m.run(data_dir, output_file="%s/all.edits" % data_dir)
         expect_file = os.path.join(data_dir, 'expected_edits')
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
-        #os.unlink(tmp_file)
+        os.unlink(tmp_file)
 
     def test_run_output_file_tmp_exists(self):
         test_dir = "%s/tmp_exists" %data_dir
@@ -355,7 +355,7 @@ class TestMerge(unittest.TestCase):
         self.m.run(test_dir, output_file=tmp_file)
         expect_file = os.path.join(test_dir, 'expected_edits')
         self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
-        #os.unlink(tmp_file)
+        os.unlink(tmp_file)
 
     def test_run_output_file_with_features(self):
         pass
