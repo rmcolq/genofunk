@@ -1,7 +1,5 @@
 import os
 import unittest
-from unittest import mock
-
 import filecmp
 
 from genofunk import apply
@@ -19,15 +17,15 @@ class TestApply(unittest.TestCase):
         editfile = os.path.join(data_dir, 'all.edits')
         self.a.load_input_files(data_dir, editfile)
 
-    def test_load_consensus_empty_directory(self):
+    def test_load_consensus_file_empty_directory(self):
         empty_dir = os.path.join(data_dir, "empty")
-        self.assertRaises(AssertionError, self.a.load_consensus, empty_dir)
+        self.assertRaises(AssertionError, self.a.load_consensus_file, empty_dir)
 
-    def test_load_consensus_missing_pair(self):
+    def test_load_consensus_file_missing_pair(self):
         missing_dir = os.path.join(data_dir, "missing_consensus")
-        self.assertRaises(AssertionError, self.a.load_consensus, missing_dir)
+        self.assertRaises(AssertionError, self.a.load_consensus_file, missing_dir)
 
-    def test_load_consensus(self):
+    def test_load_consensus_file(self):
 
         self.assertIsNotNone(self.a.consensus_sequence)
         self.assertEqual(len(self.a.consensus_sequence), 12)
@@ -41,7 +39,7 @@ class TestApply(unittest.TestCase):
     def test_apply_loaded_edits_edits_none(self):
         a = apply.Apply()
         editfile = os.path.join(data_dir, "all.edits")
-        a.load_consensus(data_dir, edit_filepath=editfile)
+        a.load_consensus_file(data_dir, edit_filepath=editfile)
         a.apply_loaded_edits()
         for name in a.consensus_sequence:
             self.assertEqual(a.consensus_sequence[name].seq, self.a.consensus_sequence[name].seq)
@@ -49,7 +47,7 @@ class TestApply(unittest.TestCase):
     def test_apply_loaded_edits_edits_empty(self):
         a = apply.Apply()
         editfile = os.path.join(data_dir, "all.edits")
-        a.load_consensus(data_dir, edit_filepath=editfile)
+        a.load_consensus_file(data_dir, edit_filepath=editfile)
         a.edits = EditFile()
         a.apply_loaded_edits()
         for name in a.consensus_sequence:
