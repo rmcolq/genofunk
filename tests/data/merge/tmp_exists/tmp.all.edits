@@ -1,0 +1,15 @@
+read_id,read_pos,from,to,ref_id,ref_pos,edit_accepted,query
+seq1_with_double_deletion_mismatch_insertion,16,,NN,hobbit,19,True,?
+seq1_with_mismatch_insertion_deletion_mismatch,16,t,,hobbit,19,True,?
+seq1_with_1_insertion,22,a,,hobbit,25,True,
+seq1_with_mismatch_insertion_deletion_mismatch,34,,N,hobbit,37,True,
+seq1_with_1_deletion,37,,N,hobbit,40,True,?
+seq1_with_1_deletion_and_insertion,37,,N,hobbit,40,True,?
+seq1_with_1_deletion_and_mismatch,37,,N,hobbit,40,True,?
+seq1_with_double_deletion_mismatch_insertion,37,a,,hobbit,40,True,?
+seq1_with_2_insertions,37,cc,,hobbit,40,True,?
+seq1_with_2_deletions,61,,NN,hobbit,64,True,
+seq1_with_1_deletion_and_insertion,67,t,,hobbit,70,True,
+seq2_with_3_insertions,22,a,,hobbit,115,True,
+seq2_with_3_insertions,37,c,,hobbit,130,True,
+seq2_with_3_insertions,82,a,,hobbit,175,True,
