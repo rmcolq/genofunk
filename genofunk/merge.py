@@ -11,7 +11,6 @@ Edit = editfile.Edit
 
 class Merge():
     def __init__(self):
-        self.consensus_sequence = None
         self.edits = None
         self.coordinates=None
 
@@ -25,6 +24,7 @@ class Merge():
         """
         if not os.path.exists(coordinates_file):
             logging.error("Paired coordinates file %s does not exist!" % coordinates_file)
+            assert (os.path.exists(coordinates_file))
 
         if features_list:
             for key in features_list:
@@ -46,6 +46,11 @@ class Merge():
                             "break things!" % record_name)
                     assert record_name not in self.coordinates[key]
                 self.coordinates[key].update(data[key])
+
+    def check_consensus_file(self, consensus_file):
+        if not os.path.exists(consensus_file):
+            logging.error("Paired consensus file %s does not exist!" % consensus_file)
+            assert (os.path.exists(consensus_file))
 
     def load_edits_in_range(self, edit_file, features_list=None):
         """
@@ -69,10 +74,10 @@ class Merge():
                         self.coordinates[feature][edit.sequence_id]["end"]:
                     self.edits.add_edit(edit)
 
-    def load_from_directory(self, directory, tmp_edit_file=None, features_list=None, filetype="fasta"):
+    def load_input_files(self, directory, tmp_edit_file=None, features_list=None, filetype="fasta"):
         """
         Looks for pairs of *.fasta, *.fasta.edit, *.fasta.coordinates files in a directory, and loads them into
-        single big lists of edits, of consensus sequences and of coordinates
+        single big lists of edits, and of coordinates
         :param directory: directory to search for pairs of files
         :param tmp_edit_file: name of tmp_edit_file created in a previous run of `merge` to load instead of paired edits
         :param features_list: list of features named in reference JSON to restrict to
@@ -80,7 +85,6 @@ class Merge():
         :return:
         """
         self.coordinates = {}
-        self.consensus_sequence = []
         self.edits = EditFile()
 
         edit_files = glob.glob("%s/*.edits" %directory)
@@ -91,19 +95,12 @@ class Merge():
             assert(len(edit_files) > 0)
         for edit_file in edit_files:
             consensus_file = edit_file.replace(".edits","")
-            if not os.path.exists(consensus_file):
-                logging.error("Paired consensus file %s does not exist!" % consensus_file)
-                assert(os.path.exists(consensus_file))
+            self.check_consensus_file(consensus_file)
             coordinates_file = edit_file.replace(".edits", ".coordinates")
-
-            logging.debug("Loading consensus file %s, edit file %s and coordinates file %s" %(consensus_file, edit_file,
-                                                                                              coordinates_file))
-            self.consensus_sequence.extend(list(SeqIO.parse(consensus_file, filetype)))
             self.load_coordinates_file(coordinates_file, features_list)
             if not tmp_edit_file:
                 self.load_edits_in_range(edit_file, features_list)
-            logging.debug("Now have %d consensus records and %d edits" %(len(self.consensus_sequence),
-                                                                         len(self.edits.edits)))
+            logging.debug("Now have %d edits" %len(self.edits.edits))
         if tmp_edit_file:
             self.load_edits_in_range(tmp_edit_file, features_list)
         self.edits.sort()
@@ -256,12 +253,12 @@ class Merge():
 
         tmp_edit_file = "%s/tmp.%s" %(os.path.dirname(output_file), os.path.basename(output_file))
         if os.path.exists(tmp_edit_file):
-            self.load_from_directory(directory, tmp_edit_file=tmp_edit_file, features_list=features_list)
+            self.load_input_files(directory, tmp_edit_file=tmp_edit_file, features_list=features_list)
             for edit in self.edits.edits:
                 if edit.edit_query:
                     edit.edit_query = False
         else:
-            self.load_from_directory(directory, tmp_edit_file=None, features_list=features_list)
+            self.load_input_files(directory, tmp_edit_file=None, features_list=features_list)
             self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
             self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
 

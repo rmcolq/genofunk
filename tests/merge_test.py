@@ -20,7 +20,7 @@ class TestMerge(unittest.TestCase):
 
     def test_load_coordinates_file_does_not_exist(self):
         coordinate_file = os.path.join(data_dir, "doesnt_exist.coordinates")
-        self.assertRaises(FileNotFoundError, self.m.load_coordinates_file, coordinate_file)
+        self.assertRaises(AssertionError, self.m.load_coordinates_file, coordinate_file)
 
     def test_load_coordinates_file_empty(self):
         coordinate_file = os.path.join(data_dir, "empty.coordinates")
@@ -69,21 +69,19 @@ class TestMerge(unittest.TestCase):
         expect_edits = EditFile(expect_edit_file)
         self.assertEqual(self.m.edits, expect_edits)
 
-    def test_load_from_directory_empty(self):
+    def test_load_input_files_empty(self):
         empty_dir = os.path.join(data_dir, "empty")
-        self.assertRaises(AssertionError, self.m.load_from_directory, empty_dir)
+        self.assertRaises(AssertionError, self.m.load_input_files, empty_dir)
 
-    def test_load_from_directory_missing_pair(self):
+    def test_load_input_files_missing_pair(self):
         missing_dir = os.path.join(data_dir, "missing_consensus")
-        self.assertRaises(AssertionError, self.m.load_from_directory, missing_dir)
+        self.assertRaises(AssertionError, self.m.load_input_files, missing_dir)
 
-    def test_load_from_directory(self):
-        self.m.load_from_directory(data_dir)
+    def test_load_input_files(self):
+        self.m.load_input_files(data_dir)
         self.assertIsNotNone(self.m.edits)
-        self.assertIsNotNone(self.m.consensus_sequence)
         self.assertIsNotNone(self.m.coordinates)
         self.assertEqual(len(self.m.edits.edits), 14)
-        self.assertEqual(len(self.m.consensus_sequence), 12)
         print(self.m.coordinates)
         self.assertEqual(len(self.m.coordinates), 2)
 
