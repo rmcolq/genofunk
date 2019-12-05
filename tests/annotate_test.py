@@ -106,68 +106,68 @@ class TestAnnotate(unittest.TestCase):
     def test_get_sequence_simple_case(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq, amino_acid=False)
+        result, coordinates = a.get_sequence(seq, amino_acid=False)
         self.assertEqual(seq, result)
 
     def test_get_sequence_coordinates_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq, coordinates=(0,12), amino_acid=False)
+        result, coordinates = a.get_sequence(seq, coordinates=(0,12), amino_acid=False)
         expected = "atgcccaagctg"
         self.assertEqual(expected, result)
 
     def test_get_sequence_offset_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq, offset=3, amino_acid=False)
+        result, coordinates = a.get_sequence(seq, offset=3, amino_acid=False)
         expected = "cccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq)
+        result, coordinates = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDV*"
         self.assertEqual(expected, result)
 
     def test_get_sequence_coordinates_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq, coordinates=(0,48))
+        result, coordinates = a.get_sequence(seq, coordinates=(0,48))
         expected = "MPKLNSVEGFSSFEDD"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_1(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtat")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq)
+        result, coordinates = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_2(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtata")
         a = annotate.Annotate("hobbit")
-        result = a.get_sequence(seq)
+        result, coordinates = a.get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
 
     def test_get_reference_sequence_no_accession(self):
-        result = self.a.get_reference_sequence()
+        result, coordinates = self.a.get_reference_sequence()
         expected ="MINAHLEINTHEGRNDTHERELIVEDAHIT*NTANASTYDIRTYWETHLEFILLEDWITHTHEENDSFWRMS*"
         self.assertEqual(expected, result)
 
     def test_get_reference_sequence_accession(self):
-        result = self.a.get_reference_sequence(accession="test")
+        result, coordinates = self.a.get_reference_sequence(accession="test")
         expected = "MPKLNSVEGFSSFEDDV*"
         self.assertEqual(expected, result)
 
     def test_get_query_sequence_no_id(self):
-        result = self.a.get_query_sequence(amino_acid=False)
+        result, coordinates = self.a.get_query_sequence(amino_acid=False)
         expected = "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa"
         self.assertEqual(expected, result)
 
     def test_get_query_sequence_id_1(self):
-        result = self.a.get_query_sequence(record_id=1, amino_acid=False)
+        result, coordinates = self.a.get_query_sequence(record_id=1, amino_acid=False)
         expected = "aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccat" \
                    "gaagaaaacgatagcttttggcgcatgagctaa"
         self.assertEqual(expected, result)
@@ -317,7 +317,7 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 2
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 12)]
         shift_from = ""
         shift_to = "N"
@@ -336,7 +336,7 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 2
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 14)]
         shift_from = ""
         shift_to = "N"
@@ -355,9 +355,9 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 3
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
-        query_sequence = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
+        query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
         result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.a.parse_cigar(result)
         print(cigar_pairs)
@@ -380,7 +380,7 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 3
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 21)]
         shift_from = ""
         shift_to = "NN"
@@ -399,9 +399,9 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 4
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
-        query_sequence = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
+        query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
         result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.a.parse_cigar(result)
         print(cigar_pairs)
@@ -424,7 +424,7 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 4
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 9)]
         shift_from = "N"
         shift_to = ""
@@ -443,9 +443,9 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 5
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
-        query_sequence = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
+        query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
         result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.a.parse_cigar(result)
         print(cigar_pairs)
@@ -468,7 +468,7 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
         record_id = 5
-        ref_sequence = self.a.get_reference_sequence(coordinates=orf_coordinates)
+        ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 13)]
         shift_from = "NN"
         shift_to = ""

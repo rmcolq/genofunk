@@ -87,8 +87,42 @@ class Annotate:
         self.reference_info = self.load_reference_info(reference_filepath)
         self.edits = EditFile(edit_filepath)
         self.apply_loaded_edits()
-        
-    def get_sequence(self, seq, coordinates=None, offset=None, amino_acid=True):
+
+    def make_sequence_length_divide_by_3(self, sequence):
+        if len(sequence) % 3 == 1:
+            sequence = sequence + "NN"
+        elif len(sequence) % 3 == 2:
+            sequence = sequence + "N"
+        return sequence
+
+    def count_stops(self, sequence, stop_codon="*"):
+        return sequence.count(stop_codon)
+
+    def shift_nucleotide_sequence_into_frame(self, sequence, coordinates=None):
+        num_stop_codons = []
+
+        shift_0 = self.make_sequence_length_divide_by_3(sequence)
+        translated_0 = shift_0.translate()
+        num_stop_codons.append(self.count_stops(translated_0))
+
+        shift_1 = "N" + sequence
+        shift_1 = self.make_sequence_length_divide_by_3(shift_1)
+        translated_1 = shift_1.translate()
+        num_stop_codons.append(self.count_stops(translated_1))
+
+        shift_2 = "NN" + sequence
+        shift_2 = self.make_sequence_length_divide_by_3(shift_2)
+        translated_2 = shift_2.translate()
+        num_stop_codons.append(self.count_stops(translated_2))
+
+        seqs = [shift_0, shift_1, shift_2]
+        i = num_stop_codons.index(min(num_stop_codons))
+        if coordinates is not None:
+            coordinates = [coordinates[0] - i, coordinates[1] - i]
+        return seqs[i], coordinates
+
+
+    def get_sequence(self, seq, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
         """
         Takes a Biopython Seq object and subsets the sequence within a coordinate range, subsequently offsetting and
         translating into amino acid sequence as required
@@ -101,18 +135,21 @@ class Annotate:
         assert(type(seq), Seq)
         if coordinates:
             (start, end) = coordinates
+            while start < 0:
+                seq = "N" + seq
+                start += 1
             seq = seq[start:end]
         if offset:
             seq = seq[offset:]
+        if shift_into_frame:
+            seq, coordinates = self.shift_nucleotide_sequence_into_frame(seq, coordinates)
+        else:
+            seq = self.make_sequence_length_divide_by_3(seq)
         if amino_acid:
-            if len(seq) % 3 == 1:
-                seq = seq + "NN"
-            elif len(seq) % 3 == 2:
-                seq = seq + "N"
             seq = seq.translate()
-        return str(seq)
+        return str(seq), coordinates
     
-    def get_reference_sequence(self, coordinates=None, offset=None, amino_acid=True, accession=None):
+    def get_reference_sequence(self, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True, accession=None):
         """
         Get the string associated to the given/closest accession (within a coordinate range and translated as required)
         :param coordinates: 0-based (start,end) in nucleotide sequence (end not included)
@@ -125,9 +162,9 @@ class Annotate:
             accession = self.closest_accession
             assert(accession)
         seq = Seq(self.reference_info['references'][accession]['sequence'])
-        return self.get_sequence(seq, coordinates, offset, amino_acid)
+        return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
     
-    def get_query_sequence(self, record_id=0, coordinates=None, offset=None, amino_acid=True):
+    def get_query_sequence(self, record_id=0, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
         """
         Get the string associated to the given record (within a coordinate range and translated as required)
         :param record_id:
@@ -137,7 +174,7 @@ class Annotate:
         :return:
         """
         seq = self.consensus_sequence[record_id].seq
-        return self.get_sequence(seq, coordinates, offset, amino_acid)
+        return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
     
     def decode_cigar(b):
         __BAM_CIGAR_STR = 'MIDNSHP=X8'
@@ -365,8 +402,12 @@ class Annotate:
         :param record_id: Default 0
         :return:
         """
-        ref_sequence = self.get_reference_sequence(feature_coordinates, amino_acid=False)
-        query_sequence = self.get_query_sequence(record_id, amino_acid=False)
+        logging.debug("Had ref feature coordinates %s" % self.str_coordinates(feature_coordinates))
+        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, shift_into_frame=True,
+                                                                        amino_acid=False)
+        logging.debug("Updated ref feature coordinates %s" % self.str_coordinates(feature_coordinates))
+        query_sequence, coordinates = self.get_query_sequence(record_id, amino_acid=False)
+        logging.debug("Found query feature coordinates %s" % self.str_coordinates(coordinates))
         result = self.pairwise_ssw_align(ref_sequence, query_sequence)
         if result and result.score1 > min_score:
             logging.debug("Found score %s and cigar %s" % (result.score1, result.cigar))
@@ -397,7 +438,9 @@ class Annotate:
         e.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
-        query_sequence = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
+        query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
+        logging.debug("found query sequence %s and coordinates %s" %(query_sequence, coordinates))
+        logging.debug("have ref sequence %s" % ref_sequence)
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
@@ -461,6 +504,11 @@ class Annotate:
             if edit.edit_applied:
                 edit.remove_edit(record)
 
+    def str_coordinates(self, coordinates):
+        if coordinates is None:
+            return coordinates
+        else:
+            ",".join([str(i) for i in coordinates])
     
     def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, record_id=0):
         """
@@ -471,8 +519,12 @@ class Annotate:
         :param record_id:
         :return: pairwise alignment with frame shifts added
         """
-        ref_sequence = self.get_reference_sequence(feature_coordinates)
-        query_sequence = self.get_query_sequence(record_id, coordinates=found_coordinates)
+        logging.debug("Had ref feature coordinates [%s]" % self.str_coordinates(feature_coordinates))
+        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, shift_into_frame=True)
+        logging.debug("Updated ref feature coordinates [%s]" % self.str_coordinates(feature_coordinates))
+        logging.debug("Had query feature coordinates [%s]" % self.str_coordinates(found_coordinates))
+        query_sequence, found_coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
+        logging.debug("Updated query feature coordinates [%s]" % self.str_coordinates(found_coordinates))
         
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.parse_cigar(result)
@@ -516,10 +568,11 @@ class Annotate:
                 coordinates = (value["start"], value["end"])
                 query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates,
                                                                            record_id=record_id)
+                logging.debug("Found feature coordinates [%s]" % self.str_coordinates([query_start, query_end]))
                 if not query_end:
                     logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
                     continue
-                logging.debug("Identified features coordinates (%d,%d)" % (query_start, query_end))
+                logging.debug("Identified features coordinates [%s]" % self.str_coordinates([query_start, query_end]))
                 coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end),
                                                                         record_id=record_id)
                 logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
