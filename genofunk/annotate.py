@@ -39,6 +39,8 @@ class Annotate:
         assert ('references' in data.keys())
         assert ('features' in data.keys())
         assert (len(data['features']) > 0)
+        if self.closest_accession is None and len(data['references'].keys()) == 1:
+            self.closest_accession = list(data['references'].keys())[0]
         assert (self.closest_accession in data['references'].keys())
         assert ('sequence' in data['references'][self.closest_accession].keys())
         assert ('locations' in data['references'][self.closest_accession].keys())
