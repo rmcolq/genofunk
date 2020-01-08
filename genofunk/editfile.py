@@ -95,9 +95,9 @@ class Edit():
         record.seq = updated_sequence
         self.edit_applied = True
         self.offset = offset
-        logging.debug("Applying edit changes")
-        logging.debug("Old: %s" %sequence)
-        logging.debug("New: %s" %updated_sequence)
+        #logging.debug("Applying edit changes")
+        #logging.debug("Old: %s" %sequence)
+        #logging.debug("New: %s" %updated_sequence)
         
     def remove_edit(self, record):
         """

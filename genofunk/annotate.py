@@ -212,7 +212,7 @@ class Annotate:
         :param matrix: Default BLOSUM62
         :return: parasail result (includes a cigar which can be decoded)
         """
-        result = parasail.sw_trace(query_seq, ref_seq, gap_open, gap_extension, matrix)
+        result = parasail.nw_trace(query_seq, ref_seq, gap_open, gap_extension, matrix)
         logging.debug("Parasail result %s" %result.cigar.decode)
         return result 
     
@@ -242,7 +242,7 @@ class Annotate:
             current_position += 1
         return pairs
 
-    def cigar_length(self,pairs, max_mismatch = 3):
+    def cigar_length(self, pairs, max_mismatch = 3, n_runs=[]):
         """
         Find the length of aligned sequence until the first insertion/deletion/padding
         :param pairs:
@@ -260,6 +260,10 @@ class Annotate:
             elif c in ["X"] and i < 3:
                 subtotal += i
             else:
+                for run in n_runs:
+                    if run[0] <= total + subtotal <= run[1]:
+                        subtotal += i
+                        continue
                 break
         return total
 
@@ -417,8 +421,33 @@ class Annotate:
         else:
             return None, None
 
+    def find_n_runs(self, sequence, min_length=3):
+        #run_start = 0
+        #run_end = 0
+        #for i,c in enumerate(sequence):
+        #    if c == "X":
+        #        run_end = i
+        pass
+
+
+
+    def get_position_for_frame_shift(self, found_coordinates, record_id, cigar_pairs, stop_codons):
+        positions = []
+        logging.debug("Found cigar position %d" %positions[0])
+        query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
+        logging.debug("Have query sequence %s and coordinates %s" % (query_sequence, coordinates))
+        for stop in stop_codons:
+            position = query_sequence.find(stop)
+            if position > 0:
+                positions.append(position)
+                logging.debug("Found stop codon position %d" % position)
+
+        positions.append(self.cigar_length(cigar_pairs))
+        return min(positions)
+
+
     def frame_shift(self, feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, shift_from,
-                    shift_to, coordinate_difference=0):
+                    shift_to, stop_codons, coordinate_difference=0):
         """
         Create a potential edit which applies a frame shift at a given position in the query sequence
         :param feature_coordinates: coordinates of features in reference sequence
@@ -433,16 +462,17 @@ class Annotate:
         :return: updated coordinate_difference, updated cigar_pairs, whether updated, edit (not applied)
         """
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
-        cigar_length = self.cigar_length(cigar_pairs)
+        shift_position = self.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons)
+        logging.debug("Try a frame shift at position %d" % shift_position)
         record_name = self.consensus_sequence[record_id].id
-        e = Edit(record_name, 1+found_coordinates[0] + 3 * (cigar_length), shift_from, shift_to, self.closest_accession,
-                 1+feature_coordinates[0] + 3 * (cigar_length))
+        e = Edit(record_name, 1+found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
+                 1+feature_coordinates[0] + 3 * (shift_position))
         e.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
         query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
-        logging.debug("found query sequence %s and coordinates %s" %(query_sequence, coordinates))
-        logging.debug("have ref sequence %s" % ref_sequence)
+        logging.debug("Found query sequence %s and coordinates %s" %(query_sequence, coordinates))
+        logging.debug("Have ref sequence %s" % ref_sequence)
         result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
@@ -457,7 +487,7 @@ class Annotate:
             return coordinate_difference, cigar_pairs, updated, e
 
     def choose_best_frame_shift(self, feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
-                                coordinate_difference=0):
+                                stop_codons, coordinate_difference=0):
         """
         Compares the frame shifts obtained by inserting or deleting 1 or 2 letters in the nucleotide query sequence to
         see which if any returns the greatest improvement to the alignment cigar
@@ -475,7 +505,7 @@ class Annotate:
         frame_shift_results = []
         for shift_from, shift_to in shifts:
             result = self.frame_shift(feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
-                                      shift_from, shift_to, coordinate_difference)
+                                      shift_from, shift_to, stop_codons, coordinate_difference)
             if result[2]:
                 frame_shift_results.append(result)
 
@@ -510,9 +540,9 @@ class Annotate:
         if coordinates is None:
             return coordinates
         else:
-            ",".join([str(i) for i in coordinates])
+            return ",".join([str(i) for i in coordinates])
     
-    def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, record_id=0):
+    def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, stop_codons, record_id=0):
         """
         Gradually introduce frame shifts which improve the amino acid alignment prefix between reference and query
         sequences in an interval
@@ -538,6 +568,7 @@ class Annotate:
                                                                                        record_id,
                                                                                        ref_sequence,
                                                                                        cigar_pairs,
+                                                                                       stop_codons,
                                                                                        coordinate_difference)
             logging.debug("new coordinate difference is %d" %coordinate_difference)
             if not updated:
@@ -558,7 +589,7 @@ class Annotate:
             f.write(j)
             f.write('\n')
 
-    def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath=""):
+    def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"]):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
@@ -576,7 +607,7 @@ class Annotate:
                     continue
                 logging.debug("Identified features coordinates [%s]" % self.str_coordinates([query_start, query_end]))
                 coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end),
-                                                                        record_id=record_id)
+                                                                        stop_codons, record_id=record_id)
                 logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
                 self.coordinates[key][self.consensus_sequence[record_id].id] = {'start': query_start, 'end':
                     query_end + coordinate_difference}
