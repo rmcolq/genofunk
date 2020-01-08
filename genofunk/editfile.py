@@ -76,18 +76,17 @@ class Edit():
 
         logging.debug(record.id)
         sequence = record.seq
-        if self.edit_from == "N":
-            self.edit_from = sequence[self.sequence_position + offset]
-        elif self.edit_from == "NN":
-            self.edit_from = str(sequence[self.sequence_position + offset:self.sequence_position + offset + 2])
+        if self.edit_from == "N" or self.edit_from == "NN":
+            self.edit_from = str(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)])
 
         logging.debug("Applying edit to sequence position %d and offset %d, converting %s=%s to %s"
                       %(self.sequence_position, offset,
-                        sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)],
+                        str(sequence[self.sequence_position + offset:self.sequence_position + offset
+                                                                     + len(self.edit_from)]),
                         self.edit_from, self.edit_to))
         logging.debug("neighbourhood %s" %sequence[self.sequence_position + offset - 4:self.sequence_position + offset
                                                                                        + len(self.edit_from) + 4])
-        assert(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)]
+        assert(str(sequence[self.sequence_position + offset:self.sequence_position + offset + len(self.edit_from)])
                == self.edit_from)
         updated_sequence = sequence[:self.sequence_position + offset]
         updated_sequence += self.edit_to 
