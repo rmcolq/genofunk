@@ -257,14 +257,17 @@ class Annotate:
                 subtotal = 0
             elif c in ["M"]:
                 subtotal += i
-            elif c in ["X"] and i < 3:
+            elif c in ["X"] and i <= max_mismatch:
                 subtotal += i
             else:
+                is_n_run = False
                 for run in n_runs:
                     if run[0] <= total + subtotal <= run[1]:
                         subtotal += i
-                        continue
-                break
+                        is_n_run = True
+                        break
+                if not is_n_run:
+                    break
         return total
 
     def cigar_has_no_indels(self,pairs):
@@ -421,19 +424,27 @@ class Annotate:
         else:
             return None, None
 
-    def find_n_runs(self, sequence, min_length=3):
-        #run_start = 0
-        #run_end = 0
-        #for i,c in enumerate(sequence):
-        #    if c == "X":
-        #        run_end = i
-        pass
+    def find_n_runs(self, sequence, min_run_length=3):
+        runs = []
+        run_start = None
+        run_end = None
+        for i,c in enumerate(sequence):
+            if c == "X" and run_start is None:
+                run_start = i
+                run_end = i
+            elif c == "X":
+                run_end += 1
+            elif run_start is not None:
+                if run_end - run_start >= min_run_length:
+                    runs.append([run_start, run_end])
+                run_start = None
+                run_end = None
+        return runs
 
 
 
-    def get_position_for_frame_shift(self, found_coordinates, record_id, cigar_pairs, stop_codons):
+    def get_position_for_frame_shift(self, found_coordinates, record_id, cigar_pairs, stop_codons, max_mismatch=3):
         positions = []
-        logging.debug("Found cigar position %d" %positions[0])
         query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
         logging.debug("Have query sequence %s and coordinates %s" % (query_sequence, coordinates))
         for stop in stop_codons:
@@ -441,13 +452,15 @@ class Annotate:
             if position > 0:
                 positions.append(position)
                 logging.debug("Found stop codon position %d" % position)
-
-        positions.append(self.cigar_length(cigar_pairs))
+        min_run_length = max_mismatch
+        n_runs = self.find_n_runs(query_sequence,min_run_length)
+        positions.append(self.cigar_length(cigar_pairs, max_mismatch, n_runs))
+        logging.debug("Found cigar position %d" % positions[-1])
         return min(positions)
 
 
     def frame_shift(self, feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, shift_from,
-                    shift_to, stop_codons, coordinate_difference=0):
+                    shift_to, shift_position, coordinate_difference=0):
         """
         Create a potential edit which applies a frame shift at a given position in the query sequence
         :param feature_coordinates: coordinates of features in reference sequence
@@ -462,8 +475,7 @@ class Annotate:
         :return: updated coordinate_difference, updated cigar_pairs, whether updated, edit (not applied)
         """
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
-        shift_position = self.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons)
-        logging.debug("Try a frame shift at position %d" % shift_position)
+
         record_name = self.consensus_sequence[record_id].id
         e = Edit(record_name, 1+found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
                  1+feature_coordinates[0] + 3 * (shift_position))
@@ -503,9 +515,11 @@ class Annotate:
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
+        shift_position = self.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons)
+        logging.debug("Try a frame shift at position %d" % shift_position)
         for shift_from, shift_to in shifts:
             result = self.frame_shift(feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
-                                      shift_from, shift_to, stop_codons, coordinate_difference)
+                                      shift_from, shift_to, shift_position, coordinate_difference)
             if result[2]:
                 frame_shift_results.append(result)
 
