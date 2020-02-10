@@ -403,7 +403,7 @@ class Annotate:
     #    closest_accession = None
     #    return closest_accession
     
-    def identify_feature_coordinates(self, feature_coordinates, record_id=0, min_score = 300):
+    def identify_feature_coordinates(self, feature_coordinates, record_id=0, min_score = 300, max_query_start_offset = 200, max_nucleotide_length_difference = 50):
         """
         Find the region in query/consensus sequence which aligns to sequence in reference nucleotide sequence with
         coordinates feature_coordinates
@@ -415,12 +415,35 @@ class Annotate:
         ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, shift_into_frame=True,
                                                                         amino_acid=False)
         logging.debug("Updated ref feature coordinates %s" % self.str_coordinates(feature_coordinates))
-        query_sequence, coordinates = self.get_query_sequence(record_id, amino_acid=False)
-        logging.debug("Found query feature coordinates %s" % self.str_coordinates(coordinates))
+        offset = max(feature_coordinates[0] - max_query_start_offset, 0)
+        query_end = feature_coordinates[1] + max_query_start_offset
+        query_sequence, coordinates = self.get_query_sequence(record_id,
+                                                              coordinates=(offset, query_end),
+                                                              amino_acid=False)
+        logging.debug("Start with query feature coordinates %s" % self.str_coordinates(coordinates))
         result = self.pairwise_ssw_align(ref_sequence, query_sequence)
         if result and result.score1 > min_score:
             logging.debug("Found score %s and cigar %s" % (result.score1, result.cigar))
-            return result.read_begin1, result.read_end1+1
+            logging.debug("Found query start and end %s, %s" % (result.read_begin1, result.read_end1))
+            logging.debug("Found ref start and end %s, %s" % (result.ref_begin1, result.ref_end1))
+
+            query_start = offset + result.read_begin1 - result.ref_begin1
+            logging.debug("Update query start to %i" % query_start)
+            feature_length = feature_coordinates[1] - feature_coordinates[0]
+            query_end = offset + result.read_end1 + feature_length - result.ref_end1 - 1
+            logging.debug("Update query end to %i" % query_end)
+            overhang_end = query_start + feature_length - result.ref_begin1
+            if (result.read_end1 - result.read_begin1) - (result.ref_end1 - result.ref_begin1) \
+                    > max_nucleotide_length_difference:
+                query_end = overhang_end
+                logging.debug("Update query end to %i based on overhang" % query_end)
+
+            query_sequence, found_coordinates = self.get_query_sequence(record_id,
+                                                                        coordinates=(query_start, query_end),
+                                                                        shift_into_frame=True,
+                                                                        amino_acid=False)
+            self.pairwise_sw_trace_align(ref_sequence, query_sequence)
+            return query_start, query_end
         else:
             return None, None
 
