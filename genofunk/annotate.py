@@ -437,12 +437,6 @@ class Annotate:
                     > max_nucleotide_length_difference:
                 query_end = overhang_end
                 logging.debug("Update query end to %i based on overhang" % query_end)
-
-            query_sequence, found_coordinates = self.get_query_sequence(record_id,
-                                                                        coordinates=(query_start, query_end),
-                                                                        shift_into_frame=True,
-                                                                        amino_acid=False)
-            self.pairwise_sw_trace_align(ref_sequence, query_sequence)
             return query_start, query_end
         else:
             return None, None
