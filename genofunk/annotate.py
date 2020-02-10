@@ -430,7 +430,7 @@ class Annotate:
             query_start = offset + result.read_begin1 - result.ref_begin1
             logging.debug("Update query start to %i" % query_start)
             feature_length = feature_coordinates[1] - feature_coordinates[0]
-            query_end = offset + result.read_end1 + feature_length - result.ref_end1 - 1
+            query_end = offset + result.read_end1 + feature_length - result.ref_end1
             logging.debug("Update query end to %i" % query_end)
             overhang_end = query_start + feature_length - result.ref_begin1
             if (result.read_end1 - result.read_begin1) - (result.ref_end1 - result.ref_begin1) \
