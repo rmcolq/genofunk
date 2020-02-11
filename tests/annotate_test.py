@@ -379,7 +379,8 @@ class TestAnnotate(unittest.TestCase):
         query_seq = self.a.consensus_sequence[0].seq
         query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
 
-        ref_seq = Seq("attaacgcgcattggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
+#                      attaacgcgCatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
+        ref_seq = Seq("attaacgcgatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
@@ -389,9 +390,10 @@ class TestAnnotate(unittest.TestCase):
         print(ref_aa)
         print(cigar_pairs)
         print(position)
-        self.assertEqual(position, 4)
+        self.assertEqual(position, 3)
 
-        ref_seq = Seq("attaacgcgcatcggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
+#                      attaacgcgcAtctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
+        ref_seq = Seq("attaacgcgctctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
@@ -401,9 +403,9 @@ class TestAnnotate(unittest.TestCase):
         print(ref_aa)
         print(cigar_pairs)
         print(position)
-        self.assertEqual(position, 4)
-#                      attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
-        ref_seq = Seq("attaacgcgcatctgaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
+        self.assertEqual(position, 3)
+#                      attaacgcgcatctggaaattaacacccaTgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
+        ref_seq = Seq("attaacgcgcatctggaaattaacacccagaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
@@ -413,7 +415,7 @@ class TestAnnotate(unittest.TestCase):
         print(ref_aa)
         print(cigar_pairs)
         print(position)
-        self.assertEqual(position, 4)
+        self.assertEqual(position, 9)
 
     def test_get_position_for_frame_shift_insertion2(self):
         found_coordinates = (0, 54)
@@ -424,6 +426,7 @@ class TestAnnotate(unittest.TestCase):
         query_seq = self.a.consensus_sequence[0].seq
         query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
 
+#                      attaacgcgcatCtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcattggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
@@ -436,6 +439,7 @@ class TestAnnotate(unittest.TestCase):
         print(position)
         self.assertEqual(position, 4)
 
+#                      attaacgcgcatcTggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
@@ -458,7 +462,7 @@ class TestAnnotate(unittest.TestCase):
         print(ref_aa)
         print(cigar_pairs)
         print(position)
-        self.assertEqual(position, 4)
+        self.assertEqual(position, 30)
 
     def test_get_position_for_frame_shift_deletion(self):
         found_coordinates = (0, 54)
@@ -469,7 +473,7 @@ class TestAnnotate(unittest.TestCase):
         query_seq = self.a.consensus_sequence[0].seq
         query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
 
-#                         attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
+#                        attaacgcgcat ctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq =   Seq("attaacgcgcattctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
@@ -483,7 +487,7 @@ class TestAnnotate(unittest.TestCase):
         self.assertEqual(position, 4)
 
 
-#                       attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
+#                      attaacgcgcatc tggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
@@ -494,9 +498,9 @@ class TestAnnotate(unittest.TestCase):
         print(ref_aa)
         print(cigar_pairs)
         print(position)
-        self.assertEqual(position, 4)
+        self.assertEqual(position, 5) #synonymous
 
-#                       attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
+#                      attaacgcgcatct ggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
         result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
@@ -507,7 +511,7 @@ class TestAnnotate(unittest.TestCase):
         print(ref_aa)
         print(cigar_pairs)
         print(position)
-        self.assertEqual(position, 4)
+        self.assertEqual(position, 5) #synonymous
 
     def test_frame_shift_insert_n_sticks(self):
         orf_coordinates = (3,93)
