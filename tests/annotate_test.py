@@ -205,7 +205,7 @@ class TestAnnotate(unittest.TestCase):
         a = annotate.Annotate()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
-        cigar_length = a.cigar_length(pairs)
+        cigar_length = a.cigar_length(pairs, max_mismatch=3)
         expected = 23
         self.assertEqual(expected, cigar_length)
 
@@ -226,7 +226,7 @@ class TestAnnotate(unittest.TestCase):
         a = annotate.Annotate()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
-        cigar_length = a.cigar_length(pairs, n_runs=[[10,14]])
+        cigar_length = a.cigar_length(pairs, max_mismatch=3, n_runs=[[10,14]])
         expected = 23
         self.assertEqual(expected, cigar_length)
 
@@ -627,7 +627,7 @@ class TestAnnotate(unittest.TestCase):
                                                                                         shift_to,
                                                                                         shift_position)
         self.assertEqual(result_coordinate_difference, -1)
-        self.assertEqual(self.a.cigar_length(result_cigar_pairs),29)
+        self.assertEqual(self.a.cigar_length(result_cigar_pairs, max_mismatch=3),29)
         self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_n_rejected_worse(self):
@@ -675,7 +675,7 @@ class TestAnnotate(unittest.TestCase):
                                                                                         shift_to,
                                                                                         shift_position)
         self.assertEqual(result_coordinate_difference, -2)
-        self.assertEqual(self.a.cigar_length(result_cigar_pairs),29)
+        self.assertEqual(self.a.cigar_length(result_cigar_pairs, max_mismatch=3),29)
         self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_nn_rejected_worse(self):
@@ -711,8 +711,9 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
         stop_codons = ["*"]
+        max_mismatch = 1
         record_id = 7
-        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
         self.assertEqual(len(self.a.edits.edits),2)
 
     # def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
