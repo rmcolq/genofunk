@@ -410,25 +410,29 @@ class Annotate:
     #    closest_accession = None
     #    return closest_accession
 
-    def find_run_n(self,sequence):
+    def find_run_n(self, sequence, min_run_length=3):
         i = sequence.find("N")
         j = 0
-        if i < 0:
-            return -1, -1
-        for j in range(i+1, len(sequence)):
-            if sequence[j] != "N":
-                break
-        return i,j-1
+        while i >= 0:
+            for j in range(i + 1, len(sequence)):
+                if sequence[j] != "N":
+                    break
+            if j - 1 - i >= min_run_length:
+                return i,j-1
+            i = sequence.find("N", j)
+        return -1, -1
 
-    def rfind_run_n(self,sequence):
+    def rfind_run_n(self, sequence, min_run_length=3):
         i = sequence.rfind("N")
         j = 0
-        if i < 0:
-            return -1, -1
-        for j in reversed(range(0, i)):
-            if sequence[j] != "N":
-                break
-        return j,i
+        while i >= 0:
+            for j in reversed(range(0, i)):
+                if sequence[j] != "N":
+                    break
+            if i - j - 1 >= min_run_length:
+                return j + 1, i
+            i = sequence.rfind("N", 0, j)
+        return -1, -1
 
     def codon_aware_update(self, old_coordinate, new_coordinate):
         while (new_coordinate - old_coordinate) % 3 != 0:
@@ -443,22 +447,21 @@ class Annotate:
                                                                           last_run_n[1]))
 
         ref_match_length = ref_match_end - ref_match_start
-        if first_run_n[0] == last_run_n[0] and query_start + first_run_n[0] < query_end - feature_length:
+        tolerance = 32
+        if first_run_n[0] == last_run_n[0] \
+                and first_run_n[0] < query_end - first_run_n[1] \
+                and query_start + first_run_n[0] <= query_end - feature_length + tolerance:
             query_start = self.codon_aware_update(query_start, query_end - feature_length)
             logging.debug("Only one run Ns at start")
-        elif first_run_n[0] == last_run_n[0] and query_start + first_run_n[1] < query_start + feature_length:
+        elif first_run_n[0] == last_run_n[0] \
+                and first_run_n[0] > query_end - first_run_n[1] \
+                and query_start + first_run_n[1] >= query_start + feature_length - tolerance:
             query_end = self.codon_aware_update(query_start, query_start + feature_length)
             logging.debug("Only one run Ns at end")
-        elif last_run_n[1] - first_run_n[0] > feature_length:
+        elif first_run_n[0] != last_run_n[0] and last_run_n[1] - first_run_n[0] > feature_length:
             query_start = self.codon_aware_update(query_start, query_start + first_run_n[0])
             query_end = self.codon_aware_update(query_start, query_start + last_run_n[1])
             logging.debug("Two runs Ns at start and end")
-        elif query_start + first_run_n[0] < query_end - feature_length:
-            query_start = self.codon_aware_update(query_start, query_end - ref_match_length)
-            logging.debug("Remove run Ns at start")
-        elif query_start + first_run_n[1] < query_start + feature_length:
-            query_end = self.codon_aware_update(query_start, query_start + feature_length)
-            logging.debug("Remove run Ns at end")
         else:
             logging.debug("Did not update coordinates")
         return query_start, query_end
@@ -508,6 +511,7 @@ class Annotate:
                 found_length = query_end - query_start
                 query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=(query_start, query_end),
                                                                       amino_acid=False)
+                query_start, query_end = coordinates
                 logging.debug("Query sequence %s" % query_sequence)
                 logging.debug("Found length %i and feature length %i" % (found_length, feature_length))
 
@@ -615,8 +619,7 @@ class Annotate:
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
-        shift_position = self.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
-                                                           max_mismatch)
+        shift_position = self.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons, max_mismatch)
         logging.debug("Try a frame shift at position %d" % shift_position)
         for shift_from, shift_to in shifts:
             result = self.frame_shift(feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
@@ -656,6 +659,27 @@ class Annotate:
             return coordinates
         else:
             return ",".join([str(i) for i in coordinates])
+
+    def get_in_frame_query_alignment(self, ref_sequence, found_coordinates, record_id, max_mismatch):
+        shift = 0
+        while shift < 3:
+            query_coordinates = (found_coordinates[0]-shift, found_coordinates[1]-shift)
+            query_sequence, query_coordinates = self.get_query_sequence(record_id, coordinates=query_coordinates)
+            result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
+            min_run_length = max_mismatch
+            n_runs = self.find_n_runs(query_sequence, min_run_length)
+            cigar_pairs = self.parse_cigar(result)
+            cigar_length = self.cigar_length(cigar_pairs, max_mismatch, n_runs)
+            if cigar_length > min_run_length:
+                return query_sequence, query_coordinates, n_runs, cigar_pairs
+            shift += 1
+
+        query_sequence, found_coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
+        result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        n_runs = self.find_n_runs(query_sequence, min_run_length)
+        cigar_pairs = self.parse_cigar(result)
+
+        return query_sequence, found_coordinates, n_runs, cigar_pairs
     
     def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, stop_codons, max_mismatch, record_id=0):
         """
@@ -670,13 +694,12 @@ class Annotate:
         ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, shift_into_frame=True)
         logging.debug("Updated ref feature coordinates [%s]" % self.str_coordinates(feature_coordinates))
         logging.debug("Had query feature coordinates [%s]" % self.str_coordinates(found_coordinates))
-        query_sequence, found_coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
+        query_sequence, found_coordinates, n_runs, cigar_pairs = self.get_in_frame_query_alignment(ref_sequence,
+                                                                                                   found_coordinates,
+                                                                                                   record_id,
+                                                                                                   max_mismatch)
         logging.debug("Updated query feature coordinates [%s]" % self.str_coordinates(found_coordinates))
-        
-        result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
-        min_run_length = max_mismatch
-        n_runs = self.find_n_runs(query_sequence, min_run_length)
-        cigar_pairs = self.parse_cigar(result)
+
         coordinate_difference = 0
         while self.cigar_length(cigar_pairs, max_mismatch, n_runs) < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
