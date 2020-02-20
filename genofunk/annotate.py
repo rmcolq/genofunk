@@ -242,7 +242,7 @@ class Annotate:
             current_position += 1
         return pairs
 
-    def cigar_length(self, pairs, max_mismatch, n_runs=[]):
+    def cigar_length(self, pairs, max_mismatch, n_runs=[], min_match=3):
         """
         Find the length of aligned sequence until the first insertion/deletion/padding
         :param pairs:
@@ -251,22 +251,29 @@ class Annotate:
         #pairs = self.parse_cigar(result)
         total = 0
         subtotal = 0
+        found_n_run = False
+        have_min_match_after_n_run = False
         for c,i in pairs:
             if c in ["="]:
                 total += i + subtotal
                 subtotal = 0
+                if found_n_run and i >= min_match:
+                    have_min_match_after_n_run = True
             elif c in ["M"]:
                 subtotal += i
-            elif c in ["X"] and i <= max_mismatch:
+            elif c in ["X"] and i <= max_mismatch and not found_n_run:
+                subtotal += i
+            elif c in ["X"] and i <= max_mismatch and found_n_run and have_min_match_after_n_run:
                 subtotal += i
             else:
-                is_n_run = False
+                found_n_run = False
                 for run in n_runs:
                     if run[0] <= total + subtotal <= run[1]:
                         subtotal += i
-                        is_n_run = True
+                        found_n_run = True
+                        have_min_match_after_n_run = False
                         break
-                if not is_n_run:
+                if not found_n_run:
                     break
         return total
 
@@ -545,8 +552,10 @@ class Annotate:
                 logging.debug("Found stop codon position %d" % position)
         min_run_length = max_mismatch
         n_runs = self.find_n_runs(query_sequence,min_run_length)
-        positions.append(self.cigar_length(cigar_pairs, max_mismatch, n_runs))
-        logging.debug("Found cigar position %d" % positions[-1])
+        cigar_length = self.cigar_length(cigar_pairs, max_mismatch, n_runs)
+        logging.debug("Found cigar length position %d" % cigar_length)
+        positions.append(cigar_length)
+        #logging.debug("Found cigar position %d" % positions[-1])
         return min(positions)
 
 
@@ -568,8 +577,8 @@ class Annotate:
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
 
         record_name = self.consensus_sequence[record_id].id
-        e = Edit(record_name, 1+found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
-                 1+feature_coordinates[0] + 3 * (shift_position))
+        e = Edit(record_name, found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
+                 feature_coordinates[0] + 3 * (shift_position))
         e.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]

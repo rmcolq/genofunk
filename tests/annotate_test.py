@@ -226,7 +226,7 @@ class TestAnnotate(unittest.TestCase):
         a = annotate.Annotate()
         result = a.pairwise_sw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
-        cigar_length = a.cigar_length(pairs, max_mismatch=3, n_runs=[[10,14]])
+        cigar_length = a.cigar_length(pairs, max_mismatch=3, n_runs=[[10,14]], min_match=1)
         expected = 23
         self.assertEqual(expected, cigar_length)
 
