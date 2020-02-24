@@ -187,14 +187,14 @@ class TestAnnotate(unittest.TestCase):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
         a = annotate.Annotate()
-        result = a.pairwise_sw_trace_align(ref_seq, query_seq)
+        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
         self.assertEqual(b'8=1X7=1X6=1D9=1X10=1I10=',result.cigar.decode)
 
     def test_parse_cigar(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
         a = annotate.Annotate()
-        result = a.pairwise_sw_trace_align(ref_seq, query_seq)
+        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
         parsed_cigar = a.parse_cigar(result)
         expected = [("=",8), ("X",1), ("=",7), ("X",1), ("=",6), ("D",1), ("=",9), ("X",1), ("=",10), ("I",1), ("=",10)]
         self.assertEqual(expected, parsed_cigar)
@@ -203,7 +203,7 @@ class TestAnnotate(unittest.TestCase):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
         a = annotate.Annotate()
-        result = a.pairwise_sw_trace_align(ref_seq, query_seq)
+        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
         cigar_length = a.cigar_length(pairs, max_mismatch=3)
         expected = 23
@@ -213,7 +213,7 @@ class TestAnnotate(unittest.TestCase):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaatacggtagagggttttcaacatttgaggaccgatgtataa"
         a = annotate.Annotate()
-        result = a.pairwise_sw_trace_align(ref_seq, query_seq)
+        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
         print(pairs)
         cigar_length = a.cigar_length(pairs, max_mismatch=1)
@@ -224,7 +224,7 @@ class TestAnnotate(unittest.TestCase):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaaccNNNNNaccgtagagggttttcaacatttgaggaccgatgtataa"
         a = annotate.Annotate()
-        result = a.pairwise_sw_trace_align(ref_seq, query_seq)
+        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = a.parse_cigar(result)
         cigar_length = a.cigar_length(pairs, max_mismatch=3, n_runs=[[10,14]], min_match=1)
         expected = 23
@@ -345,7 +345,7 @@ class TestAnnotate(unittest.TestCase):
 
         ref_seq =   Seq("attaacgcgcatcGggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -354,7 +354,7 @@ class TestAnnotate(unittest.TestCase):
 
         ref_seq = Seq("attaacgcgcatGtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -363,7 +363,7 @@ class TestAnnotate(unittest.TestCase):
 
         ref_seq = Seq("attaacgcgcatctCgaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -382,7 +382,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgCatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -395,7 +395,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcAtctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgctctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -407,7 +407,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatctggaaattaacacccaTgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatctggaaattaacacccagaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -429,7 +429,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatCtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcattggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -442,7 +442,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatcTggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -454,7 +454,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -476,7 +476,7 @@ class TestAnnotate(unittest.TestCase):
 #                        attaacgcgcat ctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq =   Seq("attaacgcgcattctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -490,7 +490,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatc tggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -503,7 +503,7 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatct ggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_sw_trace_align(ref_aa, query_aa)
+        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = self.a.parse_cigar(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
@@ -562,7 +562,7 @@ class TestAnnotate(unittest.TestCase):
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
         query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        result = self.a.pairwise_nw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.a.parse_cigar(result)
         print(cigar_pairs)
 
@@ -610,7 +610,7 @@ class TestAnnotate(unittest.TestCase):
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
         query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        result = self.a.pairwise_nw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.a.parse_cigar(result)
         print(cigar_pairs)
 
@@ -658,7 +658,7 @@ class TestAnnotate(unittest.TestCase):
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
         query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.a.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        result = self.a.pairwise_nw_trace_align(ref_sequence, query_sequence)
         cigar_pairs = self.a.parse_cigar(result)
         print(cigar_pairs)
 

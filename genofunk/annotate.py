@@ -188,8 +188,39 @@ class Annotate:
                 c = 'M'
             return l+c
         return ''.join([_decode(i) for i in b])
-            
-    def pairwise_ssw_align(self, ref_seq, query_seq, gap_open=10, gap_extension=1, matrix=parasail.blosum62):
+
+    def get_alignment_start_end(self, result):
+        # M   alignment match (can be a sequence match or mismatch)
+        # I   insertion to the reference
+        # D   deletion from the reference
+        # N   skipped region from the reference
+        # S   soft clipping (clipped sequences present in SEQ)
+        # H   hard clipping (clipped sequences NOT present in SEQ)
+        # P   padding (silent deletion from padded reference)
+        # =   sequence match
+        # X   sequence mismatch
+        pairs = self.parse_cigar(result)
+        ref_start = result.cigar.beg_ref
+        ref_end = ref_start
+        read_start = result.cigar.beg_query
+        read_end = read_start
+        found_alignment = False
+        for c, i in pairs:
+            if c in ["=", "X", "M"]:
+                ref_end += i
+                read_end += i
+                found_alignment = True
+            elif c in ["I"]:
+                read_end += i
+                if not found_alignment:
+                    read_start += i
+            elif c in ["D", "N"]:
+                ref_end += i
+                if not found_alignment:
+                    ref_start += i
+        return ref_start, ref_end - 1, read_start, read_end - 1
+
+    def pairwise_sw_align(self, ref_seq, query_seq, gap_open=10, gap_extension=1, matrix=parasail.blosum62):
         """
         Run parasail-python SSW function
         :param ref_seq:
@@ -197,14 +228,13 @@ class Annotate:
         :param gap_open: Default 10
         :param gap_extension: Default 1
         :param matrix: Default BLOSUM62
-        :return: parasail result (includes score1, cigar, ref_begin1, ref_end1, read_begin1, read_end1 attributes)
+        :return: parasail result (includes score, cigar, ref_begin, ref_end, read_begin, read_end attributes)
         """
-        result = parasail.ssw(query_seq, ref_seq, gap_open, gap_extension, matrix)
-        return result 
+        result = parasail.sw_trace_striped_sat(query_seq, ref_seq, gap_open, gap_extension, matrix)
+        return result
     
-    def pairwise_sw_trace_align(self, ref_seq, query_seq, gap_open=10, gap_extension=1, matrix=parasail.blosum62):
+    def pairwise_nw_trace_align(self, ref_seq, query_seq, gap_open=10, gap_extension=1, matrix=parasail.blosum62):
         """
-
         :param ref_seq:
         :param query_seq:
         :param gap_open: Default 10
@@ -218,7 +248,7 @@ class Annotate:
     
     def parse_cigar(self,result):
         """
-        Extract the cigar from the parasail sw_trace_align result and turn it into cigar pairs
+        Extract the cigar from the parasail sw_trace_align or nw_trace_align result and turn it into cigar pairs
         :param result:
         :return: list of pairs of (match/mismatch type, length)
         """
@@ -479,22 +509,23 @@ class Annotate:
         ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, shift_into_frame=True,
                                                                         amino_acid=False)
         logging.debug("Updated ref feature coordinates %s" % self.str_coordinates(feature_coordinates))
-        offset = max(feature_coordinates[0] - max_query_start_offset, 0)
-        query_end = self.codon_aware_update(offset, feature_coordinates[1] + max_query_start_offset)
+        offset = int(max(feature_coordinates[0] - max_query_start_offset, 0)*0.99)
+        query_end = self.codon_aware_update(offset, int((feature_coordinates[1] + max_query_start_offset)*1.01))
         query_sequence, coordinates = self.get_query_sequence(record_id,
                                                               coordinates=(offset, query_end),
                                                               amino_acid=False)
         logging.debug("Start with query feature coordinates %s" % self.str_coordinates(coordinates))
-        result = self.pairwise_ssw_align(ref_sequence, query_sequence)
-        if result and result.score1 > min_score:
-            logging.debug("Found score %s and cigar %s" % (result.score1, result.cigar))
-            logging.debug("Found query start and end %s, %s" % (result.read_begin1, result.read_end1))
-            logging.debug("Found ref start and end %s, %s" % (result.ref_begin1, result.ref_end1))
+        result = self.pairwise_sw_align(ref_sequence, query_sequence)
+        if result and result.score > min_score:
+            (ref_begin, ref_end, read_begin, read_end) = self.get_alignment_start_end(result)
+            logging.debug("Found score %s and cigar %s" % (result.score, result.cigar))
+            logging.debug("Found query start and end %s, %s" % (read_begin, read_end))
+            logging.debug("Found ref start and end %s, %s" % (ref_begin, ref_end))
 
-            query_start = offset + result.read_begin1 - result.ref_begin1
+            query_start = offset + read_begin - ref_begin
             logging.debug("Update query start to %i" % query_start)
             feature_length = feature_coordinates[1] - feature_coordinates[0]
-            query_end = self.codon_aware_update(query_start, offset + result.read_end1 + feature_length - result.ref_end1)
+            query_end = self.codon_aware_update(query_start, offset + read_end + feature_length - ref_end)
             logging.debug("Update query end to %i" % query_end)
             found_length = query_end - query_start
             query_sequence, coordinates = self.get_query_sequence(record_id,
@@ -505,7 +536,7 @@ class Annotate:
 
             if found_length - feature_length > 0:
                 query_start, query_end = self.update_coordinates_if_n_runs(query_start, query_end, query_sequence,
-                                                                           result.ref_begin1, result.ref_end1,
+                                                                           ref_begin, ref_end,
                                                                            feature_length)
                 logging.debug("Update query start, end to %i, %i" % (query_start, query_end))
                 found_length = query_end - query_start
@@ -515,15 +546,15 @@ class Annotate:
                 logging.debug("Query sequence %s" % query_sequence)
                 logging.debug("Found length %i and feature length %i" % (found_length, feature_length))
 
-            #if found_length - feature_length > 0 and query_sequence[found_length - feature_length] == "N":
-            #    query_start = query_end - feature_length
-            #    logging.debug("Update query start to %i to prune off additional bases caused by Ns" % query_start)
-            #if (result.read_end1 - result.read_begin1) - (result.ref_end1 - result.ref_begin1) \
-            #        > max_nucleotide_length_difference:
-            #    query_end = query_start + feature_length - result.ref_begin1
-            #    logging.debug("Update query end to %i based on overhang" % query_end)
             return query_start, query_end
         else:
+            if result:
+                logging.debug("Found result, but score was %i (not > %i)" % (result.score, min_score))
+            else:
+                logging.debug("No result")
+                logging.debug("Ref sequence %s" % ref_sequence)
+                logging.debug("Qry sequence %s" % query_sequence)
+
             return None, None
 
     def find_n_runs(self, sequence, min_run_length=3):
@@ -589,7 +620,7 @@ class Annotate:
         query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
         logging.debug("Found query sequence %s and coordinates %s" %(query_sequence, coordinates))
         logging.debug("Have ref sequence %s" % ref_sequence)
-        result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        result = self.pairwise_nw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = self.parse_cigar(result)
         updated = False
         e.remove_edit(self.consensus_sequence[record_id])
@@ -665,7 +696,7 @@ class Annotate:
         while shift < 3:
             query_coordinates = (found_coordinates[0]-shift, found_coordinates[1]-shift)
             query_sequence, query_coordinates = self.get_query_sequence(record_id, coordinates=query_coordinates)
-            result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
+            result = self.pairwise_nw_trace_align(ref_sequence, query_sequence)
             min_run_length = max_mismatch
             n_runs = self.find_n_runs(query_sequence, min_run_length)
             cigar_pairs = self.parse_cigar(result)
@@ -675,7 +706,7 @@ class Annotate:
             shift += 1
 
         query_sequence, found_coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.pairwise_sw_trace_align(ref_sequence, query_sequence)
+        result = self.pairwise_nw_trace_align(ref_sequence, query_sequence)
         n_runs = self.find_n_runs(query_sequence, min_run_length)
         cigar_pairs = self.parse_cigar(result)
 
