@@ -174,16 +174,17 @@ class TestAnnotate(unittest.TestCase):
 
     # No tests for decode_cigar
 
-    def test_pairwise_ssw_align(self):
+    def test_pairwise_sw_align(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
         a = annotate.Annotate()
-        result = a.pairwise_ssw_align(ref_seq, query_seq)
-        self.assertEqual(3,result.read_begin1)
-        self.assertEqual(result.read_end1, 56)
+        result = a.pairwise_sw_align(ref_seq, query_seq)
+        (ref_begin, ref_end, read_begin, read_end) = a.get_alignment_start_end(result)
+        self.assertEqual(3,read_begin)
+        self.assertEqual(read_end, 56)
         print(result)
 
-    def test_pairwise_sw_trace_align(self):
+    def test_pairwise_nw_trace_align(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
         a = annotate.Annotate()
@@ -330,9 +331,10 @@ class TestAnnotate(unittest.TestCase):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
         a = annotate.Annotate()
-        result = a.pairwise_ssw_align(ref_seq, query_seq)
-        self.assertEqual(3, result.read_begin1)
-        self.assertEqual(result.read_end1, 56)
+        result = a.pairwise_sw_align(ref_seq, query_seq)
+        (ref_begin, ref_end, read_begin, read_end) = a.get_alignment_start_end(result)
+        self.assertEqual(3, read_begin)
+        self.assertEqual(read_end, 56)
 
     def test_get_position_for_frame_shift_no_indel_or_stop(self):
         found_coordinates = (0, 54)
