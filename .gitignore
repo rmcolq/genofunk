@@ -104,3 +104,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+tests/data/real_cases
+tests/real_cases_test.py

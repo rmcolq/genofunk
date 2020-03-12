@@ -319,6 +319,18 @@ class Annotate:
                 return False
         return True
 
+    def cigar_num_matches(self,pairs):
+        """
+        Are there non-match/mismatch symbols in cigar?
+        :param pairs:
+        :return: bool
+        """
+        total = 0
+        for c, i in pairs:
+            if c in ["="]:
+                total += i
+        return total
+
     def cigar_score(self,pairs, match_score=1, mismatch_score=-1, gap_score=-1):
         """
         Find a custom score for cigar
@@ -368,7 +380,7 @@ class Annotate:
                 return False
         return len(old_cigar_pairs) < len(new_cigar_pairs)
 
-    def is_improved_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs):
+    def is_improved_cigar_prefix(self, old_cigar_pairs, new_cigar_pairs, consider_if_frameshift_added=True):
         """
         Checks whether the new cigar is thought to be an improvement over the old one. This is determined by checking if
         the new cigar extends the old one (in which case it is an improvement), whether one has a frame shift and the
@@ -383,15 +395,26 @@ class Annotate:
 
         # First on whether is extension
         if self.is_extended_cigar_prefix(old_cigar_pairs, new_cigar_pairs):
+            logging.debug("Is extended cigar prefix, so an improvement")
             return True
         elif self.is_extended_cigar_prefix(new_cigar_pairs, old_cigar_pairs):
+            logging.debug("Is cigar suffix, so NOT an improvement")
             return False
 
         # Second on existance of frameshift
-        if self.cigar_has_no_indels(old_cigar_pairs) and not self.cigar_has_no_indels(new_cigar_pairs):
-            return False
-        elif self.cigar_has_no_indels(new_cigar_pairs) and not self.cigar_has_no_indels(old_cigar_pairs):
-            return True
+        if consider_if_frameshift_added:
+            old_cigar_has_no_indels = self.cigar_has_no_indels(old_cigar_pairs)
+            new_cigar_has_no_indels = self.cigar_has_no_indels(new_cigar_pairs)
+            old_cigar_num_matches = self.cigar_num_matches(old_cigar_pairs)
+            new_cigar_num_matches = self.cigar_num_matches(new_cigar_pairs)
+            logging.debug("Old cigar has no indels is %s, and number of matches is %i" %(old_cigar_has_no_indels, old_cigar_num_matches))
+            logging.debug("New cigar has no indels is %s, and number of matches is %i" %(new_cigar_has_no_indels, new_cigar_num_matches))
+            if old_cigar_has_no_indels and not new_cigar_has_no_indels \
+                    and old_cigar_num_matches >= new_cigar_num_matches:
+                return False
+            if new_cigar_has_no_indels and not old_cigar_has_no_indels \
+                    and new_cigar_num_matches >= old_cigar_num_matches:
+                return True
 
         # Then on prefix comparison
         for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
@@ -664,7 +687,7 @@ class Annotate:
         logging.debug("Choose winning shift")
         best = 0
         for i,result in enumerate(frame_shift_results):
-            if self.is_improved_cigar_prefix(frame_shift_results[best][1], result[1]) \
+            if self.is_improved_cigar_prefix(frame_shift_results[best][1], result[1], consider_if_frameshift_added=False) \
                     and self.is_longer_cigar_prefix(frame_shift_results[best][1], result[1], max_mismatch):
                 best = i
                 logging.debug("Override best with %d" %i)

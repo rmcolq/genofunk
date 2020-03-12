@@ -303,10 +303,11 @@ class TestAnnotate(unittest.TestCase):
 
         self.assertEqual(a.is_improved_cigar_prefix(c3, c2), False)
         self.assertEqual(a.is_improved_cigar_prefix(c2, c3), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c2), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c4), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c2), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c5), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c2, True), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c4, c2, False), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c4), True)
+        self.assertEqual(a.is_improved_cigar_prefix(c5, c2), False)
+        self.assertEqual(a.is_improved_cigar_prefix(c2, c5), True)
         self.assertEqual(a.is_improved_cigar_prefix(c6, c2), False) # funny case, prefix is better, overall is worse
         self.assertEqual(a.is_improved_cigar_prefix(c2, c6), True)
 
@@ -718,15 +719,16 @@ class TestAnnotate(unittest.TestCase):
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
         self.assertEqual(len(self.a.edits.edits),2)
 
-    # def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
-    #     orf_coordinates = (3, 93)
-    #     found_coordinates = (0, 90)
-    #     stop_codons = ["*"]
-    #     record_id = 8
-    #     self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, record_id)
-    #     self.a.edits.sort()
-    #     self.assertEqual(len(self.a.edits.edits),2)
-    #
+    def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        stop_codons = ["*"]
+        max_mismatch = 1
+        record_id = 8
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
+        self.a.edits.sort()
+        self.assertEqual(len(self.a.edits.edits),2)
+
     # def test_discover_frame_shift_edits_3_insertions(self):
     #     orf_coordinates = (93, 219)
     #     found_coordinates = (0, 126)
@@ -741,7 +743,9 @@ class TestAnnotate(unittest.TestCase):
     #     a = annotate.Annotate("hobbit")
     #     ref_filepath = os.path.join(data_dir, 'ref.json')
     #     consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
+    #     print("running")
     #     a.run(ref_filepath, consensus_filepath)
+    #     print("finished running")
     #
     #     tmp_file = os.path.join(data_dir, 'consensus.fasta.edits')
     #     expect_file = os.path.join(data_dir, 'expect_consensus.fasta.edits')
