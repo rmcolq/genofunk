@@ -6,6 +6,8 @@ import filecmp
 
 from genofunk import annotate
 from genofunk import editfile
+from genofunk.parasail_utils import *
+from genofunk.sequence_utils import *
 
 EditFile = editfile.EditFile
 Edit = editfile.Edit
@@ -174,166 +176,12 @@ class TestAnnotate(unittest.TestCase):
 
     # No tests for decode_cigar
 
-    def test_pairwise_sw_align(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
-        a = annotate.Annotate()
-        result = a.pairwise_sw_align(ref_seq, query_seq)
-        (ref_begin, ref_end, read_begin, read_end) = a.get_alignment_start_end(result)
-        self.assertEqual(3,read_begin)
-        self.assertEqual(read_end, 56)
-        print(result)
-
-    def test_pairwise_nw_trace_align(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotate.Annotate()
-        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
-        self.assertEqual(b'8=1X7=1X6=1D9=1X10=1I10=',result.cigar.decode)
-
-    def test_parse_cigar(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotate.Annotate()
-        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
-        parsed_cigar = a.parse_cigar(result)
-        expected = [("=",8), ("X",1), ("=",7), ("X",1), ("=",6), ("D",1), ("=",9), ("X",1), ("=",10), ("I",1), ("=",10)]
-        self.assertEqual(expected, parsed_cigar)
-
-    def test_cigar_length(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotate.Annotate()
-        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
-        pairs = a.parse_cigar(result)
-        cigar_length = a.cigar_length(pairs, max_mismatch=3)
-        expected = 23
-        self.assertEqual(expected, cigar_length)
-
-    def test_cigar_length_max_mismatch(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        query_seq = "atgcccaacctgaatacggtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotate.Annotate()
-        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
-        pairs = a.parse_cigar(result)
-        print(pairs)
-        cigar_length = a.cigar_length(pairs, max_mismatch=1)
-        expected = 16
-        self.assertEqual(expected, cigar_length)
-
-    def test_cigar_length_n_runs(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
-        query_seq = "atgcccaaccNNNNNaccgtagagggttttcaacatttgaggaccgatgtataa"
-        a = annotate.Annotate()
-        result = a.pairwise_nw_trace_align(ref_seq, query_seq)
-        pairs = a.parse_cigar(result)
-        cigar_length = a.cigar_length(pairs, max_mismatch=3, n_runs=[[10,14]], min_match=1)
-        expected = 23
-        self.assertEqual(expected, cigar_length)
-
-    def test_is_extended_cigar_prefix(self):
-        a = annotate.Annotate()
-        c1 = [("=", 12), ("X", 1), ("=", 17)]
-        c2 = [("=", 10), ("X", 3), ("=", 17)]
-        c3 = [("=", 12), ("X", 3), ("=", 15)]
-        c4 = [("=", 12), ("I", 1), ("=", 17)]
-        c5 = [("=", 12), ("D", 1), ("=", 17)]
-        c6 = [("=", 12)]
-
-        self.assertEqual(a.is_extended_cigar_prefix(c1, c1), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c2, c2), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c3, c3), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c4, c4), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c5, c5), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c6, c6), False)
-
-        self.assertEqual(a.is_extended_cigar_prefix(c6, c1), True)
-        self.assertEqual(a.is_extended_cigar_prefix(c6, c2), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c6, c3), True)
-        self.assertEqual(a.is_extended_cigar_prefix(c6, c4), True)
-        self.assertEqual(a.is_extended_cigar_prefix(c6, c5), True)
-
-        self.assertEqual(a.is_extended_cigar_prefix(c1, c2), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c2, c1), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c1, c3), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c3, c1), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c1, c4), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c4, c1), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c1, c5), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c5, c1), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c2, c3), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c3, c2), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c2, c4), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c4, c2), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c2, c5), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c5, c2), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c3, c4), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c4, c3), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c3, c5), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c5, c3), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c4, c5), False)
-        self.assertEqual(a.is_extended_cigar_prefix(c5, c4), False)
-
-    def test_is_improved_cigar_prefix(self):
-        a = annotate.Annotate()
-        c1 = [("=", 12), ("X", 1), ("=", 17)]
-        c2 = [("=", 10), ("X", 3), ("=", 17)]
-        c3 = [("=", 12), ("X", 3), ("=", 15)]
-        c4 = [("=", 12), ("I", 1), ("=", 17)]
-        c5 = [("=", 12), ("D", 1), ("=", 17)]
-        c6 = [("=", 12)]
-
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c1), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c2), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c3, c3), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c4), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c5), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c6, c6), False)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c2), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c1), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c3), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c3, c1), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c4), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c1), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c5), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c1), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c6, c1), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c1, c6), False)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c3, c2), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c3), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c2, True), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c2, False), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c4), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c2), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c5), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c6, c2), False) # funny case, prefix is better, overall is worse
-        self.assertEqual(a.is_improved_cigar_prefix(c2, c6), True)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c3, c4), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c3), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c3, c5), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c3), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c3, c6), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c6, c3), True)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c5), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c4), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c4, c6), False)
-        self.assertEqual(a.is_improved_cigar_prefix(c6, c4), True)
-
-        self.assertEqual(a.is_improved_cigar_prefix(c6, c5), True)
-        self.assertEqual(a.is_improved_cigar_prefix(c5, c6), False)
-
-
-
     def test_identify_orf_coordinates(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"
         a = annotate.Annotate()
-        result = a.pairwise_sw_align(ref_seq, query_seq)
-        (ref_begin, ref_end, read_begin, read_end) = a.get_alignment_start_end(result)
+        result = pairwise_sw_align(ref_seq, query_seq)
+        (ref_begin, ref_end, read_begin, read_end) = get_alignment_start_end(result)
         self.assertEqual(3, read_begin)
         self.assertEqual(read_end, 56)
 
@@ -348,8 +196,8 @@ class TestAnnotate(unittest.TestCase):
 
         ref_seq =   Seq("attaacgcgcatcGggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(position)
@@ -357,8 +205,8 @@ class TestAnnotate(unittest.TestCase):
 
         ref_seq = Seq("attaacgcgcatGtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(position)
@@ -366,8 +214,8 @@ class TestAnnotate(unittest.TestCase):
 
         ref_seq = Seq("attaacgcgcatctCgaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(position)
@@ -385,8 +233,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgCatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -398,8 +246,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcAtctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgctctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -410,8 +258,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatctggaaattaacacccaTgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatctggaaattaacacccagaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -432,8 +280,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatCtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcattggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -445,8 +293,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatcTggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -457,8 +305,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -479,8 +327,8 @@ class TestAnnotate(unittest.TestCase):
 #                        attaacgcgcat ctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq =   Seq("attaacgcgcattctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -493,8 +341,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatc tggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -506,8 +354,8 @@ class TestAnnotate(unittest.TestCase):
 #                      attaacgcgcatct ggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
         ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
-        result = self.a.pairwise_nw_trace_align(ref_aa, query_aa)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_aa, query_aa)
+        cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
                                                        max_mismatch)
         print(query_aa)
@@ -565,8 +413,8 @@ class TestAnnotate(unittest.TestCase):
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
         query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.a.pairwise_nw_trace_align(ref_sequence, query_sequence)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = parse_cigar_pairs(result)
         print(cigar_pairs)
 
         cigar_pairs = [("=", 20)]
@@ -613,8 +461,8 @@ class TestAnnotate(unittest.TestCase):
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
         query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.a.pairwise_nw_trace_align(ref_sequence, query_sequence)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = parse_cigar_pairs(result)
         print(cigar_pairs)
 
         cigar_pairs = [("=", 7)]
@@ -630,7 +478,7 @@ class TestAnnotate(unittest.TestCase):
                                                                                         shift_to,
                                                                                         shift_position)
         self.assertEqual(result_coordinate_difference, -1)
-        self.assertEqual(self.a.cigar_length(result_cigar_pairs, max_mismatch=3),29)
+        self.assertEqual(get_cigar_length(result_cigar_pairs, max_mismatch=3),29)
         self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_n_rejected_worse(self):
@@ -661,8 +509,8 @@ class TestAnnotate(unittest.TestCase):
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
 
         query_sequence, coordinates = self.a.get_query_sequence(record_id, coordinates=found_coordinates)
-        result = self.a.pairwise_nw_trace_align(ref_sequence, query_sequence)
-        cigar_pairs = self.a.parse_cigar(result)
+        result = pairwise_nw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = parse_cigar_pairs(result)
         print(cigar_pairs)
 
         cigar_pairs = [("=", 12)]
@@ -678,7 +526,7 @@ class TestAnnotate(unittest.TestCase):
                                                                                         shift_to,
                                                                                         shift_position)
         self.assertEqual(result_coordinate_difference, -2)
-        self.assertEqual(self.a.cigar_length(result_cigar_pairs, max_mismatch=3),29)
+        self.assertEqual(get_cigar_length(result_cigar_pairs, max_mismatch=3),29)
         self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_nn_rejected_worse(self):
