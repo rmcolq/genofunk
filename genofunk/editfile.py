@@ -98,6 +98,7 @@ class Edit():
         #logging.debug("Applying edit changes")
         #logging.debug("Old: %s" %sequence)
         #logging.debug("New: %s" %updated_sequence)
+        return record
         
     def remove_edit(self, record):
         """
@@ -115,9 +116,6 @@ class Edit():
                          sequence[self.sequence_position + self.offset:self.sequence_position + self.offset
                                                                        + len(self.edit_to)],
                          self.edit_to, self.edit_from))
-        logging.debug("neighbourhood %s" % sequence[self.sequence_position + self.offset - 4:self.sequence_position
-                                                                                             + self.offset
-                                                                                             + len(self.edit_to) + 4])
         assert(sequence[self.sequence_position + self.offset:self.sequence_position + self.offset + len(self.edit_to)]
                == self.edit_to)
         updated_sequence = sequence[:self.sequence_position + self.offset]
@@ -127,6 +125,7 @@ class Edit():
         record.seq = updated_sequence
         self.edit_applied = False
         self.offset = 0
+        return record
         
 class EditFile():
     def __init__(self, filepath=None):

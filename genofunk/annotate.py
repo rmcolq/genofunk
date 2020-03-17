@@ -61,12 +61,10 @@ class Annotate:
             logging.error("Consensus filepath %s does not exist!" %filepath)
             assert (filepath != None)
             assert(os.path.exists(filepath))
-        records = list(SeqIO.parse(filepath, filetype))
-        logging.debug("The consensus file contains %d records" %len(records))
-        assert(len(records) > 0)
-        #if len(records) > 0:
-        #    logging.warning("At present, genofunk only considers the first sequence in the consensus file")
-        return records
+        #self.consensus_sequence = list(SeqIO.parse(filepath, filetype))
+        self.consensus_sequence = SeqIO.index(filepath, filetype)
+        logging.debug("The consensus file contains %d records" %len(self.consensus_sequence))
+        assert(len(self.consensus_sequence) > 0)
 
     def apply_loaded_edits(self):
         """
@@ -87,7 +85,7 @@ class Annotate:
         :param edit_filepath:
         :return:
         """
-        self.consensus_sequence = self.load_consensus_sequence(consensus_filepath)
+        self.load_consensus_sequence(consensus_filepath)
         self.reference_info = self.load_reference_info(reference_filepath)
         self.edits = EditFile(edit_filepath)
         self.apply_loaded_edits()
@@ -117,6 +115,8 @@ class Annotate:
             seq, coordinates = shift_nucleotide_sequence_into_frame(seq, coordinates)
         else:
             seq = make_sequence_length_divide_by_3(seq)
+        if "-" in str(seq):
+            seq = Seq(str(seq).replace("-","N"))
         if amino_acid:
             seq = seq.translate()
         return str(seq), coordinates
@@ -135,18 +135,20 @@ class Annotate:
             assert(accession)
         seq = Seq(self.reference_info['references'][accession]['sequence'])
         return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
-    
-    def get_query_sequence(self, record_id=0, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
+
+    def get_query_sequence(self, record, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
         """
         Get the string associated to the given record (within a coordinate range and translated as required)
-        :param record_id:
+        :param record or record_id:
         :param coordinates: 0-based (start,end) in nucleotide sequence (end not included)
         :param offset:
         :param amino_acid:
         :return:
         """
-        seq = self.consensus_sequence[record_id].seq
-        return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
+        if type(record) != SeqRecord:
+            seq = self.consensus_sequence[record].seq
+            return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
+        return self.get_sequence(record.seq, coordinates, shift_into_frame, offset, amino_acid)
 
     def get_query_length(self, record_id=0):
         """
@@ -224,7 +226,7 @@ class Annotate:
             query_sequence, coordinates = self.get_query_sequence(record_id,
                                                                   coordinates=(query_start, query_end),
                                                                   amino_acid=False)
-            logging.debug("Query sequence %s" %query_sequence)
+            #logging.debug("Query sequence %s" %query_sequence)
             logging.debug("Found length %i and feature length %i" %(found_length, feature_length))
 
             if found_length - feature_length > 0:
@@ -250,9 +252,9 @@ class Annotate:
 
             return None, None
 
-    def get_position_for_frame_shift(self, found_coordinates, record_id, cigar_pairs, stop_codons, max_mismatch):
+    def get_position_for_frame_shift(self, found_coordinates, record, cigar_pairs, stop_codons, max_mismatch):
         positions = []
-        query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=found_coordinates)
+        query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates)
         logging.debug("Have query sequence %s and coordinates %s" % (query_sequence, coordinates))
         for stop in stop_codons:
             position = query_sequence.find(stop)
@@ -268,7 +270,7 @@ class Annotate:
         return min(positions)
 
 
-    def frame_shift(self, feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs, shift_from,
+    def frame_shift(self, feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs, shift_from,
                     shift_to, shift_position, coordinate_difference=0):
         """
         Create a potential edit which applies a frame shift at a given position in the query sequence
@@ -285,19 +287,22 @@ class Annotate:
         """
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
 
-        record_name = self.consensus_sequence[record_id].id
+        record_name = record.id
         e = Edit(record_name, found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
                  feature_coordinates[0] + 3 * (shift_position))
-        e.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
+        logging.debug("before frame shift %s" %record.seq)
+        record = e.apply_edit(record, coordinate_difference)
+        logging.debug("after frame shift %s" %record.seq)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
-        query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=updated_found_coordinates)
+        query_sequence, coordinates = self.get_query_sequence(record, coordinates=updated_found_coordinates)
         logging.debug("Found query sequence %s and coordinates %s" %(query_sequence, coordinates))
         logging.debug("Have ref sequence %s" % ref_sequence)
         result = pairwise_nw_trace_align(ref_sequence, query_sequence)
         new_cigar_pairs = parse_cigar_pairs(result)
         updated = False
-        e.remove_edit(self.consensus_sequence[record_id])
+        record = e.remove_edit(record)
+        logging.debug("after removing frame shift %s" %record.seq)
 
         if is_improved_cigar_prefix(cigar_pairs, new_cigar_pairs):
             logging.debug("Keep frame shift as improvement")
@@ -307,14 +312,14 @@ class Annotate:
             logging.debug("Reject frame shift")
             return coordinate_difference, cigar_pairs, updated, e
 
-    def choose_best_frame_shift(self, feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
+    def choose_best_frame_shift(self, feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs,
                                 stop_codons, max_mismatch, coordinate_difference=0):
         """
         Compares the frame shifts obtained by inserting or deleting 1 or 2 letters in the nucleotide query sequence to
         see which if any returns the greatest improvement to the alignment cigar
         :param feature_coordinates: coordinates of features in reference sequence
         :param found_coordinates: corresponding coordinates for features in query sequence
-        :param record_id:
+        :param record:
         :param ref_sequence: amino acid sequence of reference in features
         :param cigar_pairs: best amino acid alignment of query before frame shift
         :param coordinate_difference: amount to offset when applying frame shift (given that we want raw coordinates in
@@ -324,16 +329,17 @@ class Annotate:
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
-        shift_position = self.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons, max_mismatch)
+        shift_position = self.get_position_for_frame_shift(found_coordinates, record, cigar_pairs, stop_codons,
+                                                           max_mismatch)
         logging.debug("Try a frame shift at position %d" % shift_position)
         for shift_from, shift_to in shifts:
-            result = self.frame_shift(feature_coordinates, found_coordinates, record_id, ref_sequence, cigar_pairs,
+            result = self.frame_shift(feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs,
                                       shift_from, shift_to, shift_position, coordinate_difference)
             if result[2]:
                 frame_shift_results.append(result)
 
         if len(frame_shift_results) == 0:
-            return coordinate_difference, cigar_pairs, False
+            return coordinate_difference, cigar_pairs, False, record
 
         logging.debug("Choose winning shift")
         best = 0
@@ -345,19 +351,19 @@ class Annotate:
 
         updated_coordinate_difference, cigar_pairs, updated, edit = frame_shift_results[best]
         logging.debug("Found updated coordinate difference %d" %updated_coordinate_difference)
-        edit.apply_edit(self.consensus_sequence[record_id], coordinate_difference)
+        record = edit.apply_edit(record, coordinate_difference)
+        logging.debug("record after winning frame shift %s" %record.seq)
         self.edits.add_edit(edit)
 
-        return updated_coordinate_difference, cigar_pairs, updated
+        return updated_coordinate_difference, cigar_pairs, updated, record
 
-    def remove_all_edits(self, record_id=0):
+    def remove_all_edits(self, record):
         if len(self.edits.edits) == 0:
             return
-        record = self.consensus_sequence[record_id]
         self.edits.edits.reverse()
         for edit in self.edits.edits:
             if edit.edit_applied:
-                edit.remove_edit(record)
+                record = edit.remove_edit(record)
 
     def get_in_frame_query_alignment(self, ref_sequence, found_coordinates, record_id, max_mismatch):
         shift = 0
@@ -389,32 +395,35 @@ class Annotate:
         :param record_id:
         :return: pairwise alignment with frame shifts added
         """
-        logging.debug("Had ref feature coordinates [%s]" % str_coordinates(feature_coordinates))
-        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, shift_into_frame=True)
-        logging.debug("Updated ref feature coordinates [%s]" % str_coordinates(feature_coordinates))
-        logging.debug("Had query feature coordinates [%s]" % str_coordinates(found_coordinates))
+        #logging.debug("Had ref feature coordinates [%s]" % str_coordinates(feature_coordinates))
+        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates)#, shift_into_frame=True)
+        #logging.debug("Updated ref feature coordinates [%s]" % str_coordinates(feature_coordinates))
+        #logging.debug("Had query feature coordinates [%s]" % str_coordinates(found_coordinates))
         query_sequence, found_coordinates, n_runs, cigar_pairs = self.get_in_frame_query_alignment(ref_sequence,
                                                                                                    found_coordinates,
                                                                                                    record_id,
                                                                                                    max_mismatch)
-        logging.debug("Updated query feature coordinates [%s]" % str_coordinates(found_coordinates))
+        #logging.debug("Updated query feature coordinates [%s]" % str_coordinates(found_coordinates))
 
         coordinate_difference = 0
+        record = self.consensus_sequence[record_id]
+        logging.debug("highest level record seq %s" %record.seq)
         while get_cigar_length(cigar_pairs, max_mismatch, n_runs) < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
-            coordinate_difference, cigar_pairs, updated = self.choose_best_frame_shift(feature_coordinates,
+            coordinate_difference, cigar_pairs, updated, record = self.choose_best_frame_shift(feature_coordinates,
                                                                                        found_coordinates,
-                                                                                       record_id,
+                                                                                       record,
                                                                                        ref_sequence,
                                                                                        cigar_pairs,
                                                                                        stop_codons,
                                                                                        max_mismatch,
                                                                                        coordinate_difference)
             logging.debug("new coordinate difference is %d" %coordinate_difference)
+            logging.debug("after choosing best frame shift record seq %s" % record.seq)
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)
-        self.remove_all_edits(record_id)
+        self.remove_all_edits(record)
         return coordinate_difference
 
     def add_key_to_coordinate_dict(self, key):
@@ -434,8 +443,10 @@ class Annotate:
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
-        for record_id in range(len(self.consensus_sequence)):
-            logging.info("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
+        for record_id in self.consensus_sequence:
+            logging.info("Consider consensus sequence %s" % record_id)
+        #for record_id in range(len(self.consensus_sequence)):
+        #    logging.info("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
             if self.get_query_length(record_id) < min_seq_length:
                 logging.info("Skip sequence as shorter than min_seq_length %d" % min_seq_length)
                 continue
