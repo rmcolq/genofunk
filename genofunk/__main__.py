@@ -61,6 +61,22 @@ def main(args=None):
         help="CSV file containing edits already found for this sample"
     )
     subparser_annotate.add_argument(
+        "--stop_codons",
+        dest="stop_codons",
+        action="store",
+        type=str,
+        default="*",
+        help="Comma separated list of symbol(s) used as stop codons"
+    )
+    subparser_annotate.add_argument(
+        "--min_seq_length",
+        dest="min_seq_length",
+        action="store",
+        type=int,
+        default=28000,
+        help="Sequences shorter than this length are ignored as partial sequences"
+    )
+    subparser_annotate.add_argument(
         "-v",
         "--verbose",
         dest="verbose",

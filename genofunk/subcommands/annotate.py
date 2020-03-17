@@ -26,13 +26,18 @@ def run(options):
     )
     logging.info(msg)
     logging.info(
-        "Input parameters:\nReference JSON: %s\nConsensus fasta: %s\nEdit file: %s\nAccession: %s",
+        "Input parameters:\nReference JSON: %s\nConsensus fasta: %s\nEdit file: %s\nAccession: %s\nStop codons: %s\n"
+        "Min sequence length: %s",
         options.reference_file,
         options.consensus_file,
         options.edit_file,
         options.accession,
+        options.stop_codons,
+        options.min_seq_length
     )
 
     a = annotate.Annotate(options.accession)
-    a.run(options.reference_file, options.consensus_file, options.edit_file)
+    stop_codons = ",".split(options.stop_codons)
+    a.run(options.reference_file, options.consensus_file, options.edit_file, stop_codons=stop_codons, max_mismatch=3,
+          min_seq_length=options.min_seq_length)
 

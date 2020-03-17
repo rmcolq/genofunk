@@ -198,7 +198,7 @@ class Annotate:
 
         query_seq_length = self.get_query_length(record_id)
         offset = int((feature_coordinates[0] - max_query_start_offset)*0.99)
-        if offset < 0 or offset > query_seq_length:
+        if offset > query_seq_length:
             offset = 0
         query_end = codon_aware_update(offset, int((feature_coordinates[1] + max_query_start_offset)*1.01))
         query_sequence, coordinates = self.get_query_sequence(record_id,
@@ -214,7 +214,7 @@ class Annotate:
 
 
             query_start = offset + read_begin - ref_begin
-            if query_start < 0 or query_start > query_seq_length:
+            if query_start > query_seq_length:
                 query_start = 0
             logging.debug("Update query start to %i" % query_start)
             feature_length = feature_coordinates[1] - feature_coordinates[0]
@@ -233,10 +233,10 @@ class Annotate:
                                                                            feature_length)
                 logging.debug("Update query start, end to %i, %i" % (query_start, query_end))
                 found_length = query_end - query_start
-                query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=(query_start, query_end),
-                                                                      amino_acid=False)
-                query_start, query_end = coordinates
-                logging.debug("Query sequence %s" % query_sequence)
+                #query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=(query_start, query_end),
+                #                                                      amino_acid=False)
+                #query_start, query_end = coordinates
+                #logging.debug("Query sequence %s" % query_sequence)
                 logging.debug("Found length %i and feature length %i" % (found_length, feature_length))
 
             return query_start, query_end
@@ -430,19 +430,22 @@ class Annotate:
             f.write('\n')
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"],
-            max_mismatch=3):
+            max_mismatch=3, min_seq_length=28000):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
         for record_id in range(len(self.consensus_sequence)):
             logging.info("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
+            if self.get_query_length(record_id) < min_seq_length:
+                logging.info("Skip sequence as shorter than min_seq_length %d" % min_seq_length)
+                continue
             for key, value in self.reference_info["references"][self.closest_accession]["locations"].items():
                 logging.info("Find edits for %s, %s" %(key,value))
                 self.add_key_to_coordinate_dict(key)
                 coordinates = (value["start"], codon_aware_update(value["start"], value["end"]))
                 query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates,
                                                                            record_id=record_id)
-                logging.debug("Found feature coordinates [%s]" % str_coordinates([query_start, query_end]))
+                #logging.debug("Found feature coordinates [%s]" % str_coordinates([query_start, query_end]))
                 if not query_end:
                     logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
                     continue
