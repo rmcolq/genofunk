@@ -61,7 +61,6 @@ class Annotate:
             logging.error("Consensus filepath %s does not exist!" %filepath)
             assert (filepath != None)
             assert(os.path.exists(filepath))
-        #self.consensus_sequence = list(SeqIO.parse(filepath, filetype))
         self.consensus_sequence = SeqIO.index(filepath, filetype)
         logging.debug("The consensus file contains %d records" %len(self.consensus_sequence))
         assert(len(self.consensus_sequence) > 0)
@@ -226,7 +225,6 @@ class Annotate:
             query_sequence, coordinates = self.get_query_sequence(record_id,
                                                                   coordinates=(query_start, query_end),
                                                                   amino_acid=False)
-            #logging.debug("Query sequence %s" %query_sequence)
             logging.debug("Found length %i and feature length %i" %(found_length, feature_length))
 
             if found_length - feature_length > 0:
@@ -235,10 +233,6 @@ class Annotate:
                                                                            feature_length)
                 logging.debug("Update query start, end to %i, %i" % (query_start, query_end))
                 found_length = query_end - query_start
-                #query_sequence, coordinates = self.get_query_sequence(record_id, coordinates=(query_start, query_end),
-                #                                                      amino_acid=False)
-                #query_start, query_end = coordinates
-                #logging.debug("Query sequence %s" % query_sequence)
                 logging.debug("Found length %i and feature length %i" % (found_length, feature_length))
 
             return query_start, query_end
@@ -266,7 +260,6 @@ class Annotate:
         cigar_length = get_cigar_length(cigar_pairs, max_mismatch, n_runs)
         logging.debug("Found cigar length position %d" % cigar_length)
         positions.append(cigar_length)
-        #logging.debug("Found cigar position %d" % positions[-1])
         return min(positions)
 
 
@@ -395,16 +388,11 @@ class Annotate:
         :param record_id:
         :return: pairwise alignment with frame shifts added
         """
-        #logging.debug("Had ref feature coordinates [%s]" % str_coordinates(feature_coordinates))
-        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates)#, shift_into_frame=True)
-        #logging.debug("Updated ref feature coordinates [%s]" % str_coordinates(feature_coordinates))
-        #logging.debug("Had query feature coordinates [%s]" % str_coordinates(found_coordinates))
+        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates)
         query_sequence, found_coordinates, n_runs, cigar_pairs = self.get_in_frame_query_alignment(ref_sequence,
                                                                                                    found_coordinates,
                                                                                                    record_id,
                                                                                                    max_mismatch)
-        #logging.debug("Updated query feature coordinates [%s]" % str_coordinates(found_coordinates))
-
         coordinate_difference = 0
         record = self.consensus_sequence[record_id]
         logging.debug("highest level record seq %s" %record.seq)
@@ -445,8 +433,6 @@ class Annotate:
 
         for record_id in self.consensus_sequence:
             logging.info("Consider consensus sequence %s" % record_id)
-        #for record_id in range(len(self.consensus_sequence)):
-        #    logging.info("Consider consensus sequence %d: %s" %(record_id, self.consensus_sequence[record_id].id))
             if self.get_query_length(record_id) < min_seq_length:
                 logging.info("Skip sequence as shorter than min_seq_length %d" % min_seq_length)
                 continue
@@ -456,7 +442,6 @@ class Annotate:
                 coordinates = (value["start"], codon_aware_update(value["start"], value["end"]))
                 query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates,
                                                                            record_id=record_id)
-                #logging.debug("Found feature coordinates [%s]" % str_coordinates([query_start, query_end]))
                 if not query_end:
                     logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
                     continue
@@ -469,3 +454,4 @@ class Annotate:
 
         self.save_found_coordinates(consensus_sequence_filepath + ".coordinates", write_format='w')
         self.edits.save(consensus_sequence_filepath + ".edits", filter_by_applied=False)
+        self.consensus_sequence.close()

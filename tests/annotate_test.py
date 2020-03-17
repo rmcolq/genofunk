@@ -88,13 +88,13 @@ class TestAnnotate(unittest.TestCase):
         consensus_filepath = os.path.join(data_dir, 'consensus.fasta')
         a = annotate.Annotate("accession")
         a.load_consensus_sequence(consensus_filepath)
-        #records = a.consensus_sequence
         records = [a.consensus_sequence[record_id] for record_id in a.consensus_sequence]
         self.assertEqual(len(records), 10)
         self.assertEqual(records[0].seq, "attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaa"
                                           "gatgcgcatattacctaa")
         self.assertEqual(records[1].seq,"aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaag"
                                          "attggattacccatacccatgaagaaaacgatagcttttggcgcatgagctaa")
+        a.consensus_sequence.close()
 
     def test_load_input_files(self):
 
@@ -167,7 +167,6 @@ class TestAnnotate(unittest.TestCase):
 
     def test_get_query_sequence_id_1(self):
         result, coordinates = self.a.get_query_sequence("seq2", amino_acid=False)
-        #result, coordinates = self.a.get_query_sequence(record_id=1, amino_acid=False)
         expected = "aacaccgcgaacgcgagcacctatgatattcgcacctattgggaaacccatctggaatttattctgctggaagattggattacccatacccat" \
                    "gaagaaaacgatagcttttggcgcatgagctaa"
         self.assertEqual(expected, result)
@@ -185,7 +184,6 @@ class TestAnnotate(unittest.TestCase):
 
     def test_get_position_for_frame_shift_no_indel_or_stop(self):
         found_coordinates = (0, 54)
-        #record_id = 0
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
@@ -222,7 +220,6 @@ class TestAnnotate(unittest.TestCase):
 
     def test_get_position_for_frame_shift_insertion(self):
         found_coordinates = (0, 54)
-        # record_id = 0
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
@@ -270,7 +267,6 @@ class TestAnnotate(unittest.TestCase):
 
     def test_get_position_for_frame_shift_insertion2(self):
         found_coordinates = (0, 54)
-        # record_id = 0
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
@@ -318,7 +314,6 @@ class TestAnnotate(unittest.TestCase):
 
     def test_get_position_for_frame_shift_deletion(self):
         found_coordinates = (0, 54)
-        # record_id = 0
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
@@ -369,7 +364,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_insert_n_sticks(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 2
         record_id = "seq1_with_1_deletion"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -392,7 +386,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_insert_n_rejected_worse(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 2
         record_id = "seq1_with_1_deletion"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -415,7 +408,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_insert_nn_sticks(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 3
         record_id = "seq1_with_2_deletions"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -444,7 +436,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_insert_nn_rejected_worse(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 3
         record_id = "seq1_with_2_deletions"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -467,7 +458,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_delete_n_sticks(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 4
         record_id = "seq1_with_1_insertion"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -496,7 +486,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_delete_n_rejected_worse(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 4
         record_id = "seq1_with_1_insertion"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -519,7 +508,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_delete_nn_sticks(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 5
         record_id = "seq1_with_2_insertions"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -548,7 +536,6 @@ class TestAnnotate(unittest.TestCase):
     def test_frame_shift_delete_nn_rejected_worse(self):
         orf_coordinates = (3,93)
         found_coordinates = (0,90)
-        # record_id = 5
         record_id = "seq1_with_2_insertions"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
@@ -572,7 +559,6 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
         stop_codons = ["*"]
-        # record_id = 6
         record_id = "seq1_with_mismatches"
         record = self.a.consensus_sequence[record_id]
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch=3, record_id=record_id)
@@ -583,7 +569,6 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         stop_codons = ["*"]
         max_mismatch = 1
-        # record_id = 7
         record_id = "seq1_with_mismatch_insertion_deletion_mismatch"
         record = self.a.consensus_sequence[record_id]
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
@@ -594,7 +579,6 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         stop_codons = ["*"]
         max_mismatch = 1
-        # record_id = 8
         record_id = "seq1_with_double_deletion_mismatch_insertion"
         record = self.a.consensus_sequence[record_id]
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
@@ -630,3 +614,6 @@ class TestAnnotate(unittest.TestCase):
     #     expect_file = os.path.join(data_dir, 'expect_consensus.fasta.coordinates')
     #     self.assertTrue(filecmp.cmp(tmp_file, expect_file, shallow=False))
     #     os.unlink(tmp_file)
+
+    def tearDown(self):
+        self.a.consensus_sequence.close()
