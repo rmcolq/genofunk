@@ -47,6 +47,7 @@ class Annotate:
         assert ('sequence' in data['references'][self.closest_accession].keys())
         assert ('locations' in data['references'][self.closest_accession].keys())
         assert (len(data['references'][self.closest_accession]['locations']) > 0)
+        logging.debug("success")
         return data
         
     def load_consensus_sequence(self, filepath, filetype="fasta"):
@@ -89,25 +90,43 @@ class Annotate:
         self.edits = EditFile(edit_filepath)
         self.apply_loaded_edits()
 
+    def get_ref_coordinates(self, json_entry):
+        coordinates = []
+        if 'join' in json_entry:
+            for coords in json_entry['join']:
+                coordinates.append(coords['start'])
+                coordinates.append(coords['end'])
+        else:
+            coordinates.append(json_entry['start'])
+            coordinates.append(json_entry['end'])
+        return coordinates
+
     def get_sequence(self, seq, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
         """
         Takes a Biopython Seq object and subsets the sequence within a coordinate range, subsequently offsetting and
         translating into amino acid sequence as required
         :param seq:
-        :param coordinates: 0-based (start,end) in nucleotide sequence (end not included)
+        :param coordinates: 0-based (start,end) in nucleotide sequence (end NOT included)
         :param offset:
         :param amino_acid:
         :return: string
         """
         assert(type(seq), Seq)
+
         if coordinates:
-            (start, end) = coordinates
+            start, end = coordinates[0], coordinates[-1]
             while start < 0:
                 seq = "N" + seq
                 start += 1
             end = min(end, len(seq))
-            seq = seq[start:end]
-            coordinates = (start, end)
+
+            return_sequence = ""
+            i = 0
+            while i < len(coordinates):
+                (start, end) = coordinates[i:i + 2]
+                return_sequence += seq[start:end]
+                i = i + 2
+            seq = return_sequence
         if offset:
             seq = seq[offset:]
         if shift_into_frame:
@@ -393,6 +412,7 @@ class Annotate:
                                                                                                    found_coordinates,
                                                                                                    record_id,
                                                                                                    max_mismatch)
+        logging.debug("found coordinates %s and query_sequence %s" %(str_coordinates(found_coordinates),query_sequence))
         coordinate_difference = 0
         record = self.consensus_sequence[record_id]
         logging.debug("highest level record seq %s" %record.seq)

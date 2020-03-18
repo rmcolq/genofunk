@@ -41,6 +41,25 @@
       "locations": {
       },
       "sequence" : "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
+    },
+    "test2":
+    {
+      "accession": "test2",
+      "length": 50,
+      "locations": {
+        "ORF1": {
+          "join": [
+            { "start": 0, "end": 11, "strand": 1 },
+            { "start": 10, "end": 20, "strand": 1 }
+          ]
+        },
+        "ORF2": {
+          "start": 30,
+          "end": 40,
+          "strand": 1
+        }
+      },
+      "sequence" : "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
     }
   }
 }
