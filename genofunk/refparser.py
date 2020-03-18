@@ -1,5 +1,6 @@
 from Bio import SeqIO
 import json
+import logging
 
 class ReferenceParser():
     """
@@ -39,11 +40,22 @@ class ReferenceParser():
                         }
                         if "note" in feature.qualifiers:
                             self.reference_json['features'][gene_id]["description"] = feature.qualifiers['note'][0],
-                        locations[feature.qualifiers['gene'][0]] = {
-                            "start": int(feature.location.start),
-                            "end": int(feature.location.end),
-                            "strand": feature.location.strand
-                        }
+                        if feature.location_operator == "join":
+                            location_list = []
+                            for loc in feature.location.parts:
+                                d = {
+                                    "start": int(feature.location.start),
+                                    "end": int(feature.location.end),
+                                    "strand": feature.location.strand
+                                }
+                                location_list.append(d)
+                            locations[feature.qualifiers['gene'][0]] = {"join": location_list}
+                        else:
+                            locations[feature.qualifiers['gene'][0]] = {
+                                "start": int(feature.location.start),
+                                "end": int(feature.location.end),
+                                "strand": feature.location.strand
+                            }
                 # else:
                 #    print(feature.type)
                 #    print(feature)
