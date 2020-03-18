@@ -1,3 +1,21 @@
+1. Allow joins in genbank coordinates e.g. ORF1ab - this would require getting the sequence to repeat a base when
+writing the final alignment and perhaps to insert a couple of Ns to get frames correct when just looking for pairwise
+alignments
+ - Update ref json to have an example including a join
+ - Update/create function which parses the ref coordinates from this
+ - Update function which gets sequence to be able to handle a coordinates list which is longer than 2
+ - Update refparser to create the relevant join in json format where applicable
+2. Get from finding ORF coordinates to concat amino acid alignments (no edits discovered)
+3. Include a check for stop codons - should have one at the end and none in the middle
+4. Create run routine which compares existing fasta to a new fasta and runs annotate/updates annotations for only
+sequences which have been added or updated
+5. Then start to discover required edits
+
+6. Passing an editfile into annotate.py will cause an error because consensus sequences can't be edited in place now
+loading with index
+
+
+OLD
 1. Want to be able to run all steps for just a specific region of the ref corresponding to an annotated feature
 2. Handle rev complement features
 3. Handle rev complement reads
