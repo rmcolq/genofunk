@@ -90,17 +90,6 @@ class Annotate:
         self.edits = EditFile(edit_filepath)
         self.apply_loaded_edits()
 
-    def get_ref_coordinates(self, json_entry):
-        coordinates = []
-        if 'join' in json_entry:
-            for coords in json_entry['join']:
-                coordinates.append(coords['start'])
-                coordinates.append(coords['end'])
-        else:
-            coordinates.append(json_entry['start'])
-            coordinates.append(json_entry['end'])
-        return coordinates
-
     def get_sequence(self, seq, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
         """
         Takes a Biopython Seq object and subsets the sequence within a coordinate range, subsequently offsetting and
@@ -121,9 +110,14 @@ class Annotate:
             end = min(end, len(seq))
 
             return_sequence = ""
+            updated_coordinates = [start]
+            if len(coordinates) > 2:
+                updated_coordinates.extend(coordinates[1:-1])
+            updated_coordinates.append(end)
+            #logging.debug("updated coordinates %s" %str_coordinates(updated_coordinates))
             i = 0
-            while i < len(coordinates):
-                (start, end) = coordinates[i:i + 2]
+            while i < len(updated_coordinates):
+                (start, end) = updated_coordinates[i:i + 2]
                 return_sequence += seq[start:end]
                 i = i + 2
             seq = return_sequence
@@ -186,7 +180,9 @@ class Annotate:
 
         ref_match_length = ref_match_end - ref_match_start
         tolerance = 32
-        if first_run_n[0] == last_run_n[0] \
+        if first_run_n[0] == -1 and last_run_n[0] == -1:
+            logging.debug("No run Ns - did not update coordinates")
+        elif first_run_n[0] == last_run_n[0] \
                 and first_run_n[0] < query_end - first_run_n[1] \
                 and query_start + first_run_n[0] <= query_end - feature_length + tolerance:
             query_start = codon_aware_update(query_start, query_end - feature_length)
@@ -302,9 +298,7 @@ class Annotate:
         record_name = record.id
         e = Edit(record_name, found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
                  feature_coordinates[0] + 3 * (shift_position))
-        logging.debug("before frame shift %s" %record.seq)
         record = e.apply_edit(record, coordinate_difference)
-        logging.debug("after frame shift %s" %record.seq)
         updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=updated_found_coordinates)
@@ -379,9 +373,13 @@ class Annotate:
 
     def get_in_frame_query_alignment(self, ref_sequence, found_coordinates, record_id, max_mismatch):
         shift = 0
+        #logging.debug("start with found coordinates %s" % str_coordinates(found_coordinates))
+
         while shift < 3:
             query_coordinates = (found_coordinates[0]-shift, found_coordinates[1]-shift)
+       #     logging.debug("query coordinates %s" % str_coordinates(query_coordinates))
             query_sequence, query_coordinates = self.get_query_sequence(record_id, coordinates=query_coordinates)
+       #     logging.debug("getting in frame query alignment with query_sequence %s and ref sequence %s" %(query_sequence, ref_sequence))
             result = pairwise_nw_trace_align(ref_sequence, query_sequence)
             min_run_length = max_mismatch
             n_runs = find_n_runs(query_sequence, min_run_length)
@@ -415,7 +413,6 @@ class Annotate:
         logging.debug("found coordinates %s and query_sequence %s" %(str_coordinates(found_coordinates),query_sequence))
         coordinate_difference = 0
         record = self.consensus_sequence[record_id]
-        logging.debug("highest level record seq %s" %record.seq)
         while get_cigar_length(cigar_pairs, max_mismatch, n_runs) < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
             coordinate_difference, cigar_pairs, updated, record = self.choose_best_frame_shift(feature_coordinates,
@@ -459,18 +456,25 @@ class Annotate:
             for key, value in self.reference_info["references"][self.closest_accession]["locations"].items():
                 logging.info("Find edits for %s, %s" %(key,value))
                 self.add_key_to_coordinate_dict(key)
-                coordinates = (value["start"], codon_aware_update(value["start"], value["end"]))
-                query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates,
-                                                                           record_id=record_id)
-                if not query_end:
-                    logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
-                    continue
-                logging.debug("Identified features coordinates [%s]" % str_coordinates([query_start, query_end]))
-                coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end),
-                                                                        stop_codons, max_mismatch, record_id=record_id)
-                logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
-                self.coordinates[key][self.consensus_sequence[record_id].id] = {'start': query_start, 'end':
-                    query_end + coordinate_difference}
+
+                feature_coordinate_pairs = get_coordinates_from_json(value, pairs=True)
+                query_coordinate_pairs = []
+                for coordinate_pair in feature_coordinate_pairs:
+                    coordinates = (coordinate_pair[0], codon_aware_update(coordinate_pair[0], coordinate_pair[1]))
+                    query_start, query_end = self.identify_feature_coordinates(feature_coordinates=coordinates,
+                                                                               record_id=record_id)
+                    if not query_end:
+                        logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
+                        continue
+                    logging.debug("Identified features coordinates [%s]" % str_coordinates([query_start, query_end]))
+                    coordinate_difference = self.discover_frame_shift_edits(coordinates, (query_start, query_end),
+                                                                            stop_codons, max_mismatch, record_id=record_id)
+                    logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
+                    query_coordinate_pairs.append({'start': query_start, 'end': query_end + coordinate_difference})
+                if len(query_coordinate_pairs) == 1:
+                    self.coordinates[key][self.consensus_sequence[record_id].id] = query_coordinate_pairs[0]
+                else:
+                    self.coordinates[key][self.consensus_sequence[record_id].id] = {"join": query_coordinate_pairs}
 
         self.save_found_coordinates(consensus_sequence_filepath + ".coordinates", write_format='w')
         self.edits.save(consensus_sequence_filepath + ".edits", filter_by_applied=False)

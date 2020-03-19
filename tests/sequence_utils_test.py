@@ -24,7 +24,7 @@ class TestSequenceUtils(unittest.TestCase):
           "end": 40,
           "strand": 1
         }
-        coordinates = get_coordinates_from_json(json_value, pairs=True)
+        coordinates = get_coordinates_from_json(json_value, pairs=False)
         expected = [30, 40]
         self.assertEqual(expected, coordinates)
 
