@@ -1,5 +1,22 @@
 import logging
 
+def get_coordinates_from_json(json_entry, pairs=True):
+    coordinates = []
+    if 'join' in json_entry:
+        for coords in json_entry['join']:
+            if pairs:
+                coordinates.append([coords['start'], coords['end']])
+            else:
+                coordinates.append(coords['start'])
+                coordinates.append(coords['end'])
+    else:
+        if pairs:
+            coordinates.append([json_entry['start'], json_entry['end']])
+        else:
+            coordinates.append(json_entry['start'])
+            coordinates.append(json_entry['end'])
+    return coordinates
+
 def make_sequence_length_divide_by_3(sequence):
     if len(sequence) % 3 == 1:
         sequence = sequence + "NN"

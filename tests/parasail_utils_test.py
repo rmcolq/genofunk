@@ -8,7 +8,7 @@ from genofunk.parasail_utils import *
 
 this_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-class TestUtils(unittest.TestCase):
+class TestParasailUtils(unittest.TestCase):
     def test_pairwise_sw_align(self):
         ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "cccatgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataac"

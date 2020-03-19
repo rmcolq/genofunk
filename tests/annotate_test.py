@@ -101,20 +101,6 @@ class TestAnnotate(unittest.TestCase):
         self.assertIsNotNone(self.a.consensus_sequence)
         self.assertIsNotNone(self.a.edits)
 
-    def test_get_ref_coordinates_simple(self):
-        json_value = self.a.reference_info["references"]["test2"]["locations"]["ORF2"]
-        self.a.closest_accession = "test2"
-        coordinates = self.a.get_ref_coordinates(json_value)
-        expected = [30, 40]
-        self.assertEqual(expected, coordinates)
-
-    def test_get_ref_coordinates_join(self):
-        json_value = self.a.reference_info["references"]["test2"]["locations"]["ORF1"]
-        self.a.closest_accession = "test2"
-        coordinates = self.a.get_ref_coordinates(json_value)
-        expected = [0,11,10,20]
-        self.assertEqual(expected, coordinates)
-
     def test_get_sequence_not_Seq(self):
         seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         a = annotate.Annotate("hobbit")
@@ -181,7 +167,7 @@ class TestAnnotate(unittest.TestCase):
     def test_get_reference_sequence_join(self):
         json_value = self.a.reference_info["references"]["test2"]["locations"]["ORF1"]
         self.a.closest_accession = "test2"
-        coordinates = self.a.get_ref_coordinates(json_value)
+        coordinates = get_coordinates_from_json(json_value, pairs=False)
         result, coordinates = self.a.get_reference_sequence(accession="test2", coordinates=coordinates, amino_acid=False)
         expected = "atgcccaagcttgaatagcgt"
         self.assertEqual(expected, result)

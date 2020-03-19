@@ -44,9 +44,9 @@ class ReferenceParser():
                             location_list = []
                             for loc in feature.location.parts:
                                 d = {
-                                    "start": int(feature.location.start),
-                                    "end": int(feature.location.end),
-                                    "strand": feature.location.strand
+                                    "start": int(loc.start),
+                                    "end": int(loc.end),
+                                    "strand": loc.strand
                                 }
                                 location_list.append(d)
                             locations[feature.qualifiers['gene'][0]] = {"join": location_list}
