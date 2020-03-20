@@ -446,10 +446,10 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1_with_2_deletions"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
-        cigar_pairs = [("=", 21)]
+        cigar_pairs = [("=", 22)]
         shift_from = ""
         shift_to = "NN"
-        shift_position = 21
+        shift_position = 22
         (result_coordinate_difference, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record,
@@ -546,10 +546,10 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1_with_2_insertions"
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
-        cigar_pairs = [("=", 13)]
+        cigar_pairs = [("=", 14)]
         shift_from = "NN"
         shift_to = ""
-        shift_position = 13
+        shift_position = 14
         (result_coordinate_difference, result_cigar_pairs, result_updated, edit) = self.a.frame_shift(orf_coordinates,
                                                                                         found_coordinates,
                                                                                         record,

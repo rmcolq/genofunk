@@ -152,3 +152,12 @@ class TestParasailUtils(unittest.TestCase):
 
         self.assertEqual(is_improved_cigar_prefix(c6, c5), True)
         self.assertEqual(is_improved_cigar_prefix(c5, c6), False)
+
+    def test_is_improved_cigar_prefix_real_examples(self):
+        c1 = [('=', 5), ('X', 1), ('=', 5), ('X', 19)]
+        c2 = [('=', 5), ('X', 1), ('=', 4), ('X', 1), ('=', 9), ('X', 1), ('=', 9)]
+        self.assertEqual(is_improved_cigar_prefix(c1, c2), True)
+
+        c3 = [('=', 102), ('X', 1), ('=', 122)]
+        c4 = [('=', 102), ('X', 1), ('=', 121), ('X', 1)]
+        self.assertEqual(is_improved_cigar_prefix(c3, c4), False)

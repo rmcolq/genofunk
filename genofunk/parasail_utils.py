@@ -232,12 +232,13 @@ def is_improved_cigar_prefix(old_cigar_pairs, new_cigar_pairs, consider_if_frame
         logging.debug("Is cigar suffix, so NOT an improvement")
         return False
 
+    old_cigar_num_matches = cigar_num_matches(old_cigar_pairs)
+    new_cigar_num_matches = cigar_num_matches(new_cigar_pairs)
+
     # Second on existance of frameshift
     if consider_if_frameshift_added:
         old_cigar_has_no_indels = cigar_has_no_indels(old_cigar_pairs)
         new_cigar_has_no_indels = cigar_has_no_indels(new_cigar_pairs)
-        old_cigar_num_matches = cigar_num_matches(old_cigar_pairs)
-        new_cigar_num_matches = cigar_num_matches(new_cigar_pairs)
         logging.debug("Old cigar has no indels is %s, and number of matches is %i" %(old_cigar_has_no_indels, old_cigar_num_matches))
         logging.debug("New cigar has no indels is %s, and number of matches is %i" %(new_cigar_has_no_indels, new_cigar_num_matches))
         if old_cigar_has_no_indels and not new_cigar_has_no_indels \
@@ -255,6 +256,12 @@ def is_improved_cigar_prefix(old_cigar_pairs, new_cigar_pairs, consider_if_frame
             continue
 
         new_c, new_c_length = new_cigar_pairs[i]
+
+        if new_c == old_c and old_c_length - 1 <= new_c_length <= old_c_length:
+            if new_cigar_num_matches > old_cigar_num_matches:
+                return True
+            elif old_cigar_num_matches > new_cigar_num_matches:
+                return False
 
         if new_c == old_c and new_c_length < old_c_length:
             if i + 1 < len(new_cigar_pairs):

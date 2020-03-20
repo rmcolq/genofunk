@@ -27,7 +27,7 @@ def make_sequence_length_divide_by_3(sequence):
 def count_stops(sequence, stop_codon="*"):
     return sequence.count(stop_codon)
 
-def find_run_n( sequence, min_run_length=3):
+def find_run_n( sequence, min_run_length=9):
     i = sequence.find("N")
     j = 0
     while i >= 0:
@@ -35,11 +35,11 @@ def find_run_n( sequence, min_run_length=3):
             if sequence[j] != "N":
                 break
         if j - 1 - i >= min_run_length:
-            return i,j-1
+            return i,j
         i = sequence.find("N", j)
     return -1, -1
 
-def rfind_run_n( sequence, min_run_length=3):
+def rfind_run_n( sequence, min_run_length=9):
     i = sequence.rfind("N")
     j = 0
     while i >= 0:
@@ -47,7 +47,7 @@ def rfind_run_n( sequence, min_run_length=3):
             if sequence[j] != "N":
                 break
         if i - j - 1 >= min_run_length:
-            return j + 1, i
+            return j + 1, i+1
         i = sequence.rfind("N", 0, j)
     return -1, -1
 
@@ -101,3 +101,26 @@ def str_coordinates(coordinates):
         return coordinates
     else:
         return ",".join([str(i) for i in coordinates])
+
+def is_open_reading_frame(amino_acid_sequence, allow_stop_codons=False, allow_missing=True, stop_codons=['*']):
+    if len(amino_acid_sequence) < 3:
+        return False
+
+    if not allow_stop_codons:
+        for letter in amino_acid_sequence[1:-1]:
+            if letter in stop_codons:
+                return False
+
+    start = ["M"]
+    stop = stop_codons[:]
+    if allow_missing:
+        start.append("X")
+        stop.append("X")
+
+    if amino_acid_sequence[0] not in start:
+        return False
+
+    if amino_acid_sequence[-1] not in stop:
+        return False
+
+    return True

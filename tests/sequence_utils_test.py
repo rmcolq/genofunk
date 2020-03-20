@@ -49,3 +49,23 @@ class TestSequenceUtils(unittest.TestCase):
         coordinates = get_coordinates_from_json(json_value, pairs=False)
         expected = [0,11,10,20]
         self.assertEqual(expected, coordinates)
+
+    def test_is_open_reading_frame_wrong_start(self):
+        amino_acid_sequence = "NATIL*"
+        result = is_open_reading_frame(amino_acid_sequence)
+        self.assertFalse(result)
+
+    def test_is_open_reading_frame_wrong_start(self):
+        amino_acid_sequence = "MNATIL*S"
+        result = is_open_reading_frame(amino_acid_sequence)
+        self.assertFalse(result)
+
+    def test_is_open_reading_frame_wrong_start(self):
+        amino_acid_sequence = "MNATIL*S*"
+        result = is_open_reading_frame(amino_acid_sequence)
+        self.assertFalse(result)
+
+    def test_is_open_reading_frame_wrong_start(self):
+        amino_acid_sequence = "MNATIL*S*"
+        result = is_open_reading_frame(amino_acid_sequence, allow_stop_codons=True)
+        self.assertTrue(result)
