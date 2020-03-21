@@ -25,8 +25,11 @@ def run(options):
     )
     logging.info(msg)
     logging.info(
-        "Input parameters:\nDirectory: %s\nOutput file: %s\nFeatures: %s\nMin occurence: %d\nInteractive: %s"
-        % (options.directory, options.output_file, options.features, options.min_occurence, str(options.interactive)))
+        "Input parameters:\nDirectory: %s\nOutput file: %s\nFeatures: %s\nMin occurence: %d\nInteractive: "
+        "%s\nAccept all: %s"
+        % (options.directory, options.output_file, options.features, options.min_occurence, str(options.interactive),
+           str(options.accept_all)))
 
     g = merge.Merge()
-    g.run(options.directory, options.output_file, options.features, options.min_occurence, options.interactive)
+    g.run(options.directory, options.output_file, options.features, options.min_occurence, options.interactive,
+          options.accept_all)

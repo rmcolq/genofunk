@@ -1,16 +1,13 @@
-1. Allow joins in genbank coordinates e.g. ORF1ab - this would require getting the sequence to repeat a base when
-writing the final alignment and perhaps to insert a couple of Ns to get frames correct when just looking for pairwise
-alignments
- - apply edit finding etc independently for parts of a join
- - at end when checking if start with M and end with *, consider joined up seq
-2. Get from finding ORF coordinates to concat amino acid alignments (no edits discovered)
-3. Include a check for stop codons - should have one at the end and none in the middle
-4. Create run routine which compares existing fasta to a new fasta and runs annotate/updates annotations for only
-sequences which have been added or updated
-5. Then start to discover required edits
-
+0. Add flag to allow stops in middle when checking during annotate
+1. In merge, add default command line mode to accept all edits (can't have interactive in snakemake pipeline)
+2. Update apply to work with joins etc in line with updates to annotate
+3. Add to apply flag which outputs concatenation of specified ORFs
+4. Want a concat amino acid alignments
+5. Create run routine which compares existing fasta to a new fasta and runs annotate/updates annotations for only
+sequences which have been added or updated?
 6. Passing an editfile into annotate.py will cause an error because consensus sequences can't be edited in place now
-loading with index
+loading with index - handle
+7. In annotate, improve edit finding so doesn't ADD FP edits which introduce more stop - obviously wrong
 
 
 OLD

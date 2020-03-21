@@ -226,7 +226,7 @@ class Merge():
             else:
                 self.add_query_to_edits(current_similar)
 
-    def run(self, directory, output_file="all.edits", features="", min_occurence=2, interactive=False):
+    def run(self, directory, output_file="all.edits", features="", min_occurence=2, interactive=False, accept_all=False):
         """
         Loads edit files from directory and merges into one file. In the process, flags edits which should probably
         be ignored because they may be real features. Outputs a `tmp` file if there are edits to manually query. Once
@@ -259,8 +259,9 @@ class Merge():
                     edit.edit_query = False
         else:
             self.load_input_files(directory, tmp_edit_file=None, features_list=features_list)
-            self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
-            self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
+            if not accept_all:
+                self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
+                self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
 
         if self.edits.contains_query():
             self.edits.save(tmp_edit_file, filter_by_applied=False)

@@ -140,6 +140,13 @@ def main(args=None):
     )
 
     subparser_merge.add_argument(
+        "--accept_all",
+        dest="accept_all",
+        action="store_true",
+        help="Accept all edits",
+    )
+
+    subparser_merge.add_argument(
         "-v",
         "--verbose",
         dest="verbose",
