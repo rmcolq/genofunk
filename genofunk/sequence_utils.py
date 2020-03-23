@@ -1,4 +1,13 @@
 import logging
+from Bio import SeqIO
+from Bio.Seq import Seq
+
+
+def add_key_to_coordinate_dict(coordinate_dict, key):
+    if key in coordinate_dict:
+        return
+    else:
+        coordinate_dict[key] = {}
 
 def get_coordinates_from_json(json_entry, pairs=True):
     coordinates = []
@@ -95,6 +104,49 @@ def codon_aware_update(old_coordinate, new_coordinate):
     while (new_coordinate - old_coordinate) % 3 != 0:
         new_coordinate += 1
     return new_coordinate
+
+def get_sequence(seq, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True, stop_symbol='*'):
+    """
+    Takes a Biopython Seq object and subsets the sequence within a coordinate range, subsequently offsetting and
+    translating into amino acid sequence as required
+    :param seq:
+    :param coordinates: 0-based (start,end) in nucleotide sequence (end NOT included)
+    :param offset:
+    :param amino_acid:
+    :return: string
+    """
+    assert(type(seq), Seq)
+
+    if coordinates:
+        start, end = coordinates[0], coordinates[-1]
+        while start < 0:
+            seq = "N" + seq
+            start += 1
+        end = min(end, len(seq))
+
+        return_sequence = ""
+        updated_coordinates = [start]
+        if len(coordinates) > 2:
+            updated_coordinates.extend(coordinates[1:-1])
+        updated_coordinates.append(end)
+        #logging.debug("updated coordinates %s" %str_coordinates(updated_coordinates))
+        i = 0
+        while i < len(updated_coordinates):
+            (start, end) = updated_coordinates[i:i + 2]
+            return_sequence += seq[start:end]
+            i = i + 2
+        seq = return_sequence
+    if offset:
+        seq = seq[offset:]
+    if shift_into_frame:
+        seq, coordinates = shift_nucleotide_sequence_into_frame(seq, coordinates)
+    else:
+        seq = make_sequence_length_divide_by_3(seq)
+    if "-" in str(seq):
+        seq = Seq(str(seq).replace("-","N"))
+    if amino_acid:
+        seq = seq.translate(stop_symbol=stop_symbol)
+    return str(seq), coordinates
 
 def str_coordinates(coordinates):
     if coordinates is None:

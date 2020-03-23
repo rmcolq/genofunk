@@ -103,49 +103,6 @@ class Annotate:
         self.reference_info = self.load_reference_info(reference_filepath)
         self.edits = EditFile(edit_filepath)
         self.apply_loaded_edits()
-
-    def get_sequence(self, seq, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
-        """
-        Takes a Biopython Seq object and subsets the sequence within a coordinate range, subsequently offsetting and
-        translating into amino acid sequence as required
-        :param seq:
-        :param coordinates: 0-based (start,end) in nucleotide sequence (end NOT included)
-        :param offset:
-        :param amino_acid:
-        :return: string
-        """
-        assert(type(seq), Seq)
-
-        if coordinates:
-            start, end = coordinates[0], coordinates[-1]
-            while start < 0:
-                seq = "N" + seq
-                start += 1
-            end = min(end, len(seq))
-
-            return_sequence = ""
-            updated_coordinates = [start]
-            if len(coordinates) > 2:
-                updated_coordinates.extend(coordinates[1:-1])
-            updated_coordinates.append(end)
-            #logging.debug("updated coordinates %s" %str_coordinates(updated_coordinates))
-            i = 0
-            while i < len(updated_coordinates):
-                (start, end) = updated_coordinates[i:i + 2]
-                return_sequence += seq[start:end]
-                i = i + 2
-            seq = return_sequence
-        if offset:
-            seq = seq[offset:]
-        if shift_into_frame:
-            seq, coordinates = shift_nucleotide_sequence_into_frame(seq, coordinates)
-        else:
-            seq = make_sequence_length_divide_by_3(seq)
-        if "-" in str(seq):
-            seq = Seq(str(seq).replace("-","N"))
-        if amino_acid:
-            seq = seq.translate()
-        return str(seq), coordinates
     
     def get_reference_sequence(self, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True, accession=None):
         """
@@ -160,7 +117,7 @@ class Annotate:
             accession = self.closest_accession
             assert(accession)
         seq = Seq(self.reference_info['references'][accession]['sequence'])
-        return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
+        return get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
 
     def get_query_sequence(self, record, coordinates=None, shift_into_frame=False, offset=None, amino_acid=True):
         """
@@ -173,8 +130,8 @@ class Annotate:
         """
         if type(record) != SeqRecord:
             seq = self.consensus_sequence[record].seq
-            return self.get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
-        return self.get_sequence(record.seq, coordinates, shift_into_frame, offset, amino_acid)
+            return get_sequence(seq, coordinates, shift_into_frame, offset, amino_acid)
+        return get_sequence(record.seq, coordinates, shift_into_frame, offset, amino_acid)
 
     def get_query_length(self, record_id=0):
         """
@@ -506,12 +463,6 @@ class Annotate:
         logging.debug("Second checked found coordinates %s" % str_coordinates(found_coordinates))
         return coordinate_difference, found_coordinates
 
-    def add_key_to_coordinate_dict(self, key):
-        if key in self.coordinates:
-                return
-        else:
-                self.coordinates[key] = {}
-
     def save_found_coordinates(self, filepath, write_format='a'):
         with open(filepath,write_format) as f:
             j = json.dumps(self.coordinates)
@@ -561,7 +512,7 @@ class Annotate:
                 continue
             for key, value in self.reference_info["references"][self.closest_accession]["locations"].items():
                 logging.info("Find edits for %s, %s" %(key,value))
-                self.add_key_to_coordinate_dict(key)
+                add_key_to_coordinate_dict(self.coordinates, key)
 
                 feature_coordinate_pairs = get_coordinates_from_json(value, pairs=True)
                 self.check_have_open_reading_frame_ref(feature_coordinate_pairs)

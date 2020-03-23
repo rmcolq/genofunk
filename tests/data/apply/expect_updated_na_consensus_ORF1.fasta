@@ -1,9 +1,12 @@
 >seq1
 attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaa
 ctgattgtggaagatgcgcatattacctaa
+>seq2
 >seq1_with_1_deletion
 attaacgcgcatctggaaattaacacccatgaaggccNcaacgatacccatgaacgcgaa
 ctgattgtggaagatgcgcatattacctaa
+>seq1_with_1_deletion_and_insertion
+>seq1_with_1_deletion_and_mismatch
 >seq1_with_2_deletions
 attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaa
 cNNattgtggaagatgcgcatattacctaa
@@ -22,3 +25,4 @@ gtgattgtggaagatgcgcatattacctaa
 >seq1_with_double_deletion_mismatch_insertion
 attaacgcgcatctggNNattaacacccatgaaggccccaacgatacccatgaacgcgaa
 ctgattgtggaagatgcgcatattacctaa
+>seq2_with_3_insertions

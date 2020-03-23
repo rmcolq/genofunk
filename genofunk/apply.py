@@ -5,8 +5,10 @@ import glob
 import json
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 from genofunk import editfile
+from genofunk.sequence_utils import *
 
 EditFile = editfile.EditFile
 Edit = editfile.Edit
@@ -33,16 +35,14 @@ class Apply():
 
         if features_list:
             for key in features_list:
-                if key not in self.coordinates:
-                    self.coordinates[key] = {}
+                add_key_to_coordinate_dict(self.coordinates, key)
 
         with open(coordinates_file) as json_file:
             data = json.load(json_file)
             for key in data:
                 if features_list and key not in features_list:
                     continue
-                if key not in self.coordinates:
-                    self.coordinates[key] = {}
+                add_key_to_coordinate_dict(self.coordinates, key)
                 for record_name in data[key]:
                     if record_name in self.coordinates[key]:
                         logging.error(
@@ -74,6 +74,7 @@ class Apply():
                     "break things!" % key)
             assert key not in self.consensus_sequence
         self.consensus_sequence.update(record_dict)
+        record_dict.close()
         logging.debug("After loading consensus file %s, we have %d consensus records " % (consensus_file,
                                                                                           len(self.consensus_sequence)))
 
@@ -139,7 +140,7 @@ class Apply():
             record = self.consensus_sequence[edit.sequence_id]
             edit.apply_edit(record, filter_by_accepted=filter_by_accepted)
 
-    def save_updated_consensuses(self, filepath=None, feature=None, amino_acid=False):
+    def save_updated_consensuses(self, filepath=None, features=None, concat=False, amino_acid=False):
         """
         Save new consensus sequences with edits applied to file, restricting to a feature or translating as required
         :param filepath: output file name (Default : stdout)
@@ -151,34 +152,31 @@ class Apply():
             out_handle = open(filepath, 'w')
         else:
             out_handle = sys.stdout
-            if feature:
-                out_handle.write(feature)
+            if features:
+                out_handle.write(features)
 
         for seq_name in self.consensus_sequence:
             seq = self.consensus_sequence[seq_name]
-            assert type(seq), Seq
-            if feature:
-                if seq_name not in self.coordinates[feature]:
-                    continue
-                (start, end) = self.coordinates[feature][seq_name]["start"], self.coordinates[feature][seq_name]["end"]
-                seq = seq[start:end]
-            if amino_acid:
-                if len(seq) % 3 == 1:
-                    seq = seq + "NN"
-                elif len(seq) % 3 == 2:
-                    seq = seq + "N"
-                new_seq = seq.translate(stop_symbol='X')
-                new_seq.id = seq.id
-                new_seq.name = seq.name
-                new_seq.description = seq.description
-                seq = new_seq
-                assert (len(seq)-1)*3 <= len(self.consensus_sequence[seq_name]) <= len(seq)*3
+            assert type(seq.seq), Seq
+
+            if features:
+                out_seq = Seq("")
+                for feature in features:
+                    if seq_name not in self.coordinates[feature]:
+                        continue
+                    coordinates = get_coordinates_from_json(self.coordinates[feature][seq_name], pairs=False)
+                    feature_seq, coordinates = get_sequence(seq.seq, coordinates=coordinates, amino_acid=amino_acid, stop_symbol='X')
+                    out_seq = out_seq + feature_seq
+                seq.seq = out_seq
+            else:
+                out_seq, coordinates = get_sequence(seq.seq, amino_acid=amino_acid, stop_symbol='X')
+                seq.seq = Seq(out_seq)
             SeqIO.write(seq, out_handle, "fasta")
 
         if filepath:
             out_handle.close()
 
-    def run(self, directory, edit_filepath, output_prefix, features=""):
+    def run(self, directory, edit_filepath, output_prefix, features="", concat=False):
         """
         Applies accepted edits from a list to consensus sequences and outputs both nucleotide and amino acid FASTA files
         for alignment. If a list of features is provided, outputs a file pair per feature.
@@ -193,13 +191,16 @@ class Apply():
         else:
             features_list = None
         self.load_input_files(directory, edit_filepath, features_list=features_list)
+        if concat and features_list is None:
+            features_list = self.coordinates.keys()
         self.apply_loaded_edits()
 
-        if features_list:
+        if features_list and not concat:
             for feature in features_list:
-                self.save_updated_consensuses("%s.%s.na.fasta" % (output_prefix, feature), feature=feature)
-                self.save_updated_consensuses("%s.%s.aa.fasta" % (output_prefix, feature), feature=feature,
+                self.save_updated_consensuses("%s.%s.na.fasta" % (output_prefix, feature), features=[feature])
+                self.save_updated_consensuses("%s.%s.aa.fasta" % (output_prefix, feature), features=[feature],
                                               amino_acid=True)
         else:
-            self.save_updated_consensuses("%s.na.fasta" % output_prefix)
-            self.save_updated_consensuses("%s.aa.fasta" % output_prefix, amino_acid=True)
+            self.save_updated_consensuses("%s.na.fasta" % output_prefix, features=features_list, concat=concat)
+            self.save_updated_consensuses("%s.aa.fasta" % output_prefix, features=features_list, concat=concat,
+                                          amino_acid=True)

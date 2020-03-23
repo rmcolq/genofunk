@@ -196,6 +196,12 @@ def main(args=None):
         type=str,
         help="Output file prefix",
     )
+    subparser_apply.add_argument(
+        "--concatinate",
+        dest="concatinate",
+        action="store_true",
+        help="Creates one output file with feature sequences concatenated",
+    )
 
     subparser_apply.add_argument(
         "-v",

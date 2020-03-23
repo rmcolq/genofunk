@@ -104,53 +104,53 @@ class TestAnnotate(unittest.TestCase):
     def test_get_sequence_not_Seq(self):
         seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         a = annotate.Annotate("hobbit")
-        self.assertRaises(TypeError, a.get_sequence, seq)
+        self.assertRaises(TypeError, get_sequence, seq)
 
     def test_get_sequence_simple_case(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq, amino_acid=False)
+        result, coordinates = get_sequence(seq, amino_acid=False)
         self.assertEqual(seq, result)
 
     def test_get_sequence_coordinates_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq, coordinates=(0,12), amino_acid=False)
+        result, coordinates = get_sequence(seq, coordinates=(0,12), amino_acid=False)
         expected = "atgcccaagctg"
         self.assertEqual(expected, result)
 
     def test_get_sequence_offset_na(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq, offset=3, amino_acid=False)
+        result, coordinates = get_sequence(seq, offset=3, amino_acid=False)
         expected = "cccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq)
+        result, coordinates = get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDV*"
         self.assertEqual(expected, result)
 
     def test_get_sequence_coordinates_aa(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq, coordinates=(0,48))
+        result, coordinates = get_sequence(seq, coordinates=(0,48))
         expected = "MPKLNSVEGFSSFEDD"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_1(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtat")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq)
+        result, coordinates = get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
 
     def test_get_sequence_aa_length_remainder_2(self):
         seq = Seq("atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtata")
         a = annotate.Annotate("hobbit")
-        result, coordinates = a.get_sequence(seq)
+        result, coordinates = get_sequence(seq)
         expected = "MPKLNSVEGFSSFEDDVX"
         self.assertEqual(expected, result)
 
@@ -196,10 +196,10 @@ class TestAnnotate(unittest.TestCase):
         max_mismatch = 3
 
         query_seq = self.a.consensus_sequence[record_id].seq
-        query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
+        query_aa, c = get_sequence(query_seq, amino_acid=True)
 
         ref_seq =   Seq("attaacgcgcatcGggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -208,7 +208,7 @@ class TestAnnotate(unittest.TestCase):
         self.assertEqual(position, 30)
 
         ref_seq = Seq("attaacgcgcatGtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -217,7 +217,7 @@ class TestAnnotate(unittest.TestCase):
         self.assertEqual(position, 30)
 
         ref_seq = Seq("attaacgcgcatctCgaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -232,11 +232,11 @@ class TestAnnotate(unittest.TestCase):
         max_mismatch = 3
 
         query_seq = self.a.consensus_sequence[record_id].seq
-        query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
+        query_aa, c = get_sequence(query_seq, amino_acid=True)
 
 #                      attaacgcgCatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -249,7 +249,7 @@ class TestAnnotate(unittest.TestCase):
 
 #                      attaacgcgcAtctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgctctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -261,7 +261,7 @@ class TestAnnotate(unittest.TestCase):
         self.assertEqual(position, 3)
 #                      attaacgcgcatctggaaattaacacccaTgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatctggaaattaacacccagaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -279,11 +279,11 @@ class TestAnnotate(unittest.TestCase):
         max_mismatch = 3
 
         query_seq = self.a.consensus_sequence[record_id].seq
-        query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
+        query_aa, c = get_sequence(query_seq, amino_acid=True)
 
 #                      attaacgcgcatCtggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcattggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -296,7 +296,7 @@ class TestAnnotate(unittest.TestCase):
 
 #                      attaacgcgcatcTggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -308,7 +308,7 @@ class TestAnnotate(unittest.TestCase):
         self.assertEqual(position, 4)
 #                      attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -326,11 +326,11 @@ class TestAnnotate(unittest.TestCase):
         max_mismatch = 3
 
         query_seq = self.a.consensus_sequence[record_id].seq
-        query_aa, c = self.a.get_sequence(query_seq, amino_acid=True)
+        query_aa, c = get_sequence(query_seq, amino_acid=True)
 
 #                        attaacgcgcat ctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq =   Seq("attaacgcgcattctggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -344,7 +344,7 @@ class TestAnnotate(unittest.TestCase):
 
 #                      attaacgcgcatc tggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
@@ -357,7 +357,7 @@ class TestAnnotate(unittest.TestCase):
 
 #                      attaacgcgcatct ggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa
         ref_seq = Seq("attaacgcgcatcttggaaattaacacccatgaaggccgcaacgatacccatgaacgcgaactgattgtggaagatgcgcatattacctaa")
-        ref_aa, c = self.a.get_sequence(ref_seq, amino_acid=True)
+        ref_aa, c = get_sequence(ref_seq, amino_acid=True)
         result = pairwise_nw_trace_align(ref_aa, query_aa)
         cigar_pairs = parse_cigar_pairs(result)
         position = self.a.get_position_for_frame_shift(found_coordinates, record_id, cigar_pairs, stop_codons,
