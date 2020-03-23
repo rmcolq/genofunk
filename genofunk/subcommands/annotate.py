@@ -3,7 +3,6 @@ import os
 import sys
 
 from genofunk import annotate, editfile
-from genofunk import annotate, editfile
 
 
 def run(options):

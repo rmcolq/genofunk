@@ -1,5 +1,4 @@
 0. Add flag to allow stops in middle when checking during annotate
-1. In merge, add default command line mode to accept all edits (can't have interactive in snakemake pipeline)
 2. Update apply to work with joins etc in line with updates to annotate
 3. Add to apply flag which outputs concatenation of specified ORFs
 4. Want a concat amino acid alignments

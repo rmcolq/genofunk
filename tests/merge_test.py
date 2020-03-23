@@ -200,6 +200,22 @@ class TestMerge(unittest.TestCase):
             self.assertEqual(self.m.edits.edits[2].edit_query, False)
             self.assertEqual(self.m.edits.edits[3].edit_query, False)
 
+    def test_find_common_edits_last_2_common_accept_all(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "c", "ref", 8))
+        self.m.find_common_edits(accept_all=True)
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, False)
+        self.assertEqual(self.m.edits.edits[3].edit_accepted, False)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, False)
+        self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
     def test_find_common_edits_last_2_common_min_3(self):
         self.m.edits = EditFile()
         self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
@@ -263,6 +279,22 @@ class TestMerge(unittest.TestCase):
             self.assertEqual(self.m.edits.edits[1].edit_query, False)
             self.assertEqual(self.m.edits.edits[2].edit_query, False)
             self.assertEqual(self.m.edits.edits[3].edit_query, False)
+
+    def test_find_similar_edits_last_2_similar_accept_all(self):
+        self.m.edits = EditFile()
+        self.m.edits.add_edit(Edit(0, 0, "a", "g", "ref", 1))
+        self.m.edits.add_edit(Edit(0, 5, "g", "c", "ref", 6))
+        self.m.edits.add_edit(Edit(0, 8, "g", "c", "ref", 8))
+        self.m.edits.add_edit(Edit(1, 9, "g", "t", "ref", 8))
+        self.m.find_similar_edits(accept_all=True)
+        self.assertEqual(self.m.edits.edits[0].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[1].edit_accepted, True)
+        self.assertEqual(self.m.edits.edits[2].edit_accepted, False)
+        self.assertEqual(self.m.edits.edits[3].edit_accepted, False)
+        self.assertEqual(self.m.edits.edits[0].edit_query, False)
+        self.assertEqual(self.m.edits.edits[1].edit_query, False)
+        self.assertEqual(self.m.edits.edits[2].edit_query, False)
+        self.assertEqual(self.m.edits.edits[3].edit_query, False)
 
     def test_find_similar_edits_last_2_similar_interactive_yn(self):
         self.m.edits = EditFile()

@@ -154,12 +154,14 @@ class Merge():
         for edit in edit_list:
             edit.edit_query = True
 
-    def find_common_edits(self, min_occurrence=2, interactive=False):
+    def find_common_edits(self, min_occurrence=2, interactive=False, accept_all=False):
         """
         Search for edits which occur with respect to the same reference at the same position and are of the same from/to
         form in multiple consensus records. Questions the user about accepting or ignoring each such case.
         :param min_occurrence: minimum number of times to see an edit to question it (Default:2)
         :param interactive: run in interactive mode expecting user command line responses (Default:False)
+        :param accept_all: accept all edits which occur fewer than the minimum number of times and rejects those
+        that occur more than this (Default:False)
         :return:
         """
         self.edits.sort()
@@ -176,6 +178,9 @@ class Merge():
                               "caused by sequencing/assembly errors)." % (len(current_identical), current_identical[-1])
                     if interactive:
                         self.query_edits(current_identical, message)
+                    elif accept_all:
+                        for edit in current_identical:
+                            edit.edit_accepted = False
                     else:
                         self.add_query_to_edits(current_identical)
                 current_identical = [new_edit]
@@ -184,15 +189,20 @@ class Merge():
                       "caused by sequencing/assembly errors)." % (len(current_identical), current_identical[-1])
             if interactive:
                 self.query_edits(current_identical, message)
+            elif accept_all:
+                for edit in current_identical:
+                    edit.edit_accepted = False
             else:
                 self.add_query_to_edits(current_identical)
 
-    def find_similar_edits(self, min_occurrence=2, interactive=False):
+    def find_similar_edits(self, min_occurrence=2, interactive=False, accept_all=False):
         """
         Search for edits which occur with respect to the same reference at the same position but possibly with DIFFERENT
         to/from sequences in multiple consensus records. Questions the user about accepting or ignoring each such case.
         :param min_occurrence: minimum number of times to see an edit to question it (Default:2)
         :param interactive: run in interactive mode expecting user command line responses (Default:False)
+        :param accept_all: accept all edits which occur fewer than the minimum number of times and rejects those
+        that occur more than this (Default:False)
         :return:
         """
         self.edits.sort()
@@ -211,6 +221,9 @@ class Merge():
                         for edit in current_similar:
                             if edit.edit_accepted:
                                     self.query_edit(edit)
+                    elif accept_all:
+                        for edit in current_similar:
+                            edit.edit_accepted = False
                     else:
                         self.add_query_to_edits(current_similar)
                 current_similar = [new_edit]
@@ -223,6 +236,9 @@ class Merge():
                 for edit in current_similar:
                     if edit.edit_accepted:
                         self.query_edit(edit)
+            elif accept_all:
+                for edit in current_similar:
+                    edit.edit_accepted = False
             else:
                 self.add_query_to_edits(current_similar)
 
@@ -259,9 +275,8 @@ class Merge():
                     edit.edit_query = False
         else:
             self.load_input_files(directory, tmp_edit_file=None, features_list=features_list)
-            if not accept_all:
-                self.find_common_edits(min_occurrence=min_occurence, interactive=interactive)
-                self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive)
+            self.find_common_edits(min_occurrence=min_occurence, interactive=interactive, accept_all=accept_all)
+            self.find_similar_edits(min_occurrence=min_occurence, interactive=interactive, accept_all=accept_all)
 
         if self.edits.contains_query():
             self.edits.save(tmp_edit_file, filter_by_applied=False)
