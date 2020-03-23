@@ -69,6 +69,16 @@ class TestApply(unittest.TestCase):
                               "idontexistinasample": {}}
         self.assertEqual(a.coordinates, expect_coordinates)
 
+    def test_load_coordinates_file_with_join(self):
+        coordinate_file = os.path.join(data_dir, "simple2.coordinates")
+        features_list = ["ORF3", "idontexistinasample"]
+        a = apply.Apply()
+        a.coordinates = {}
+        a.load_coordinates_file(coordinate_file, features_list)
+        expect_coordinates = {"ORF3": {"seq6": {"join": [{"start": 0, "end": 124}, {"start": 125, "end": 128}]}},
+                              "idontexistinasample": {}}
+        self.assertEqual(a.coordinates, expect_coordinates)
+
     def test_load_coordinates_file_repeat_ids(self):
         coordinate_file = os.path.join(data_dir, "simple.coordinates")
         self.assertRaises(AssertionError, self.a.load_coordinates_file, coordinate_file)
@@ -265,5 +275,33 @@ class TestApply(unittest.TestCase):
         os.unlink(tmp_na_file)
         tmp_aa_file = os.path.join(data_dir, 'tmp.ORF1.aa.fasta')
         expect_aa_file = os.path.join(data_dir, 'expect_updated_aa_consensus_ORF1.fasta')
+        self.assertTrue(filecmp.cmp(tmp_aa_file, expect_aa_file, shallow=False))
+        os.unlink(tmp_aa_file)
+
+    def test_run_with_features_concat(self):
+        a = apply.Apply()
+        editfile = os.path.join(data_dir, 'all.edits')
+        tmp_prefix = os.path.join(data_dir, 'tmp')
+        a.run(data_dir, editfile, tmp_prefix, concat=True, features="ORF1,ORF2")
+        tmp_na_file = os.path.join(data_dir, 'tmp.na.fasta')
+        expect_na_file = os.path.join(data_dir, 'expect_updated_na_consensus_concat.fasta')
+        self.assertTrue(filecmp.cmp(tmp_na_file, expect_na_file, shallow=False))
+        os.unlink(tmp_na_file)
+        tmp_aa_file = os.path.join(data_dir, 'tmp.aa.fasta')
+        expect_aa_file = os.path.join(data_dir, 'expect_updated_aa_consensus_concat.fasta')
+        self.assertTrue(filecmp.cmp(tmp_aa_file, expect_aa_file, shallow=False))
+        os.unlink(tmp_aa_file)
+
+    def test_run_with_no_features_concat(self):
+        a = apply.Apply()
+        editfile = os.path.join(data_dir, 'all.edits')
+        tmp_prefix = os.path.join(data_dir, 'tmp')
+        a.run(data_dir, editfile, tmp_prefix, concat=True)
+        tmp_na_file = os.path.join(data_dir, 'tmp.na.fasta')
+        expect_na_file = os.path.join(data_dir, 'expect_updated_na_consensus_concat.fasta')
+        self.assertTrue(filecmp.cmp(tmp_na_file, expect_na_file, shallow=False))
+        os.unlink(tmp_na_file)
+        tmp_aa_file = os.path.join(data_dir, 'tmp.aa.fasta')
+        expect_aa_file = os.path.join(data_dir, 'expect_updated_aa_consensus_concat.fasta')
         self.assertTrue(filecmp.cmp(tmp_aa_file, expect_aa_file, shallow=False))
         os.unlink(tmp_aa_file)
