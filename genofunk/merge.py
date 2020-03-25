@@ -34,7 +34,6 @@ class Merge():
         with open(coordinates_file) as json_file:
             data = json.load(json_file)
             for key in data:
-                print(key)
                 if features_list and key not in features_list:
                     continue
                 if key not in self.coordinates:
@@ -90,6 +89,7 @@ class Merge():
         edit_files = glob.glob("%s/*.edits" %directory)
         if tmp_edit_file:
             edit_files = list(filter(lambda x: not x.endswith(tmp_edit_file), edit_files))
+        logging.debug("Found edit files %s" %edit_files)
         if len(edit_files) == 0:
             logging.error("No edit files found in directory %s" %directory)
             assert(len(edit_files) > 0)

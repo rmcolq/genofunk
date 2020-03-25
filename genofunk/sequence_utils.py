@@ -145,7 +145,9 @@ def get_sequence(seq, coordinates=None, shift_into_frame=False, offset=None, ami
     if "-" in str(seq):
         seq = Seq(str(seq).replace("-","N"))
     if amino_acid:
+        logging.debug("Nucleotide sequence %s" %str(seq))
         seq = seq.translate(stop_symbol=stop_symbol)
+        logging.debug("Amino acid sequence %s" %str(seq))
     return str(seq), coordinates
 
 def str_coordinates(coordinates):

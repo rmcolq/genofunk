@@ -113,3 +113,4 @@ class Translate():
         self.generate_nucleotide_alignment()
         self.check_nucleotide_alignment_lengths()
         self.save_nucleotide_alignment(output_filepath)
+        self.consensus_sequences.close()

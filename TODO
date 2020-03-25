@@ -1,6 +1,7 @@
 0. Add flag to allow stops in middle when checking during annotate
 1. Make looking for frame shift edits optional with a command line flag
-4. Want a concat amino acid alignments
+2. Don't load all consensus sequences into memory at once in apply
+4. Want a concat amino acid alignments in translate
 5. Create run routine which compares existing fasta to a new fasta and runs annotate/updates annotations for only
 sequences which have been added or updated?
 6. Passing an editfile into annotate.py will cause an error because consensus sequences can't be edited in place now

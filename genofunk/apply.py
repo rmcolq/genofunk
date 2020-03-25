@@ -167,11 +167,14 @@ class Apply():
                     coordinates = get_coordinates_from_json(self.coordinates[feature][seq_name], pairs=False)
                     feature_seq, coordinates = get_sequence(seq.seq, coordinates=coordinates, amino_acid=amino_acid, stop_symbol='X')
                     out_seq = out_seq + feature_seq
-                seq.seq = out_seq
+                out_seq = SeqRecord(out_seq, id=seq.id, name=seq.name, description=seq.description)
             else:
                 out_seq, coordinates = get_sequence(seq.seq, amino_acid=amino_acid, stop_symbol='X')
-                seq.seq = Seq(out_seq)
-            SeqIO.write(seq, out_handle, "fasta")
+                out_seq = SeqRecord(seq=Seq(out_seq), id=seq.id, name=seq.name, description=seq.description)
+            if amino_acid and not is_open_reading_frame(out_seq):
+                logging.debug("After finding edits, still have bad open reading frame for query sequence %s with "
+                              "coordinates %s" % (seq, str_coordinates(coordinates)))
+            SeqIO.write(out_seq, out_handle, "fasta")
 
         if filepath:
             out_handle.close()

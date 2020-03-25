@@ -495,10 +495,14 @@ class Annotate:
         record = self.apply_edits_in_range(record, all_query_coordinates)
 
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=all_query_coordinates)
+
         if not is_open_reading_frame(query_sequence):
             logging.debug("After finding edits, still have bad open reading frame for query sequence %s with "
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
             sys.exit()
+        else:
+            logging.debug("Good reading frame for query sequence %s with "
+                          "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"],
             max_mismatch=3, min_seq_length=28000):
