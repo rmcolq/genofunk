@@ -194,6 +194,7 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
+        include_compensatory = False
 
         query_seq = self.a.consensus_sequence[record_id].seq
         query_aa, c = get_sequence(query_seq, amino_acid=True)
@@ -230,6 +231,7 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
+        include_compensatory = False
 
         query_seq = self.a.consensus_sequence[record_id].seq
         query_aa, c = get_sequence(query_seq, amino_acid=True)
@@ -277,6 +279,7 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
+        include_compensatory = False
 
         query_seq = self.a.consensus_sequence[record_id].seq
         query_aa, c = get_sequence(query_seq, amino_acid=True)
@@ -324,6 +327,7 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1"
         stop_codons = ["*"]
         max_mismatch = 3
+        include_compensatory = False
 
         query_seq = self.a.consensus_sequence[record_id].seq
         query_aa, c = get_sequence(query_seq, amino_acid=True)
@@ -487,7 +491,7 @@ class TestAnnotate(unittest.TestCase):
                                                                                         shift_to,
                                                                                         shift_position)
         self.assertEqual(result_coordinate_difference, -1)
-        self.assertEqual(get_cigar_length(result_cigar_pairs, max_mismatch=3),29)
+        self.assertEqual(get_position_first_indel_or_mismatch_in_cigar(result_cigar_pairs, max_mismatch=3), 29)
         self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_n_rejected_worse(self):
@@ -537,7 +541,7 @@ class TestAnnotate(unittest.TestCase):
                                                                                         shift_to,
                                                                                         shift_position)
         self.assertEqual(result_coordinate_difference, -2)
-        self.assertEqual(get_cigar_length(result_cigar_pairs, max_mismatch=3),29)
+        self.assertEqual(get_position_first_indel_or_mismatch_in_cigar(result_cigar_pairs, max_mismatch=3), 29)
         self.assertEqual(result_updated, True)
 
     def test_frame_shift_delete_nn_rejected_worse(self):
@@ -566,9 +570,11 @@ class TestAnnotate(unittest.TestCase):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
         stop_codons = ["*"]
+        max_mismatch = 3
+        include_compensatory = False
         record_id = "seq1_with_mismatches"
         record = self.a.consensus_sequence[record_id]
-        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch=3, record_id=record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
         self.assertEqual(len(self.a.edits.edits),0)
 
     def test_discover_frame_shift_edits_mismatch_insertion_deletion_mismatch(self):
@@ -576,9 +582,10 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         stop_codons = ["*"]
         max_mismatch = 1
+        include_compensatory = False
         record_id = "seq1_with_mismatch_insertion_deletion_mismatch"
         record = self.a.consensus_sequence[record_id]
-        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
         self.assertEqual(len(self.a.edits.edits),2)
 
     def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
@@ -586,9 +593,10 @@ class TestAnnotate(unittest.TestCase):
         found_coordinates = (0, 90)
         stop_codons = ["*"]
         max_mismatch = 1
+        include_compensatory = False
         record_id = "seq1_with_double_deletion_mismatch_insertion"
         record = self.a.consensus_sequence[record_id]
-        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, record_id)
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
         self.a.edits.sort()
         self.assertEqual(len(self.a.edits.edits),2)
 

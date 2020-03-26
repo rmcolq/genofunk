@@ -37,7 +37,7 @@ class TestParasailUtils(unittest.TestCase):
         query_seq = "atgcccaacctgaataccgtagagggttttcaacatttgaggaccgatgtataa"
         result = pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = parse_cigar_pairs(result)
-        cigar_length = get_cigar_length(pairs, max_mismatch=3)
+        cigar_length = get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch=3)
         expected = 23
         self.assertEqual(expected, cigar_length)
 
@@ -47,7 +47,7 @@ class TestParasailUtils(unittest.TestCase):
         result = pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = parse_cigar_pairs(result)
         print(pairs)
-        cigar_length = get_cigar_length(pairs, max_mismatch=1)
+        cigar_length = get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch=1)
         expected = 16
         self.assertEqual(expected, cigar_length)
 
@@ -56,7 +56,7 @@ class TestParasailUtils(unittest.TestCase):
         query_seq = "atgcccaaccNNNNNaccgtagagggttttcaacatttgaggaccgatgtataa"
         result = pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = parse_cigar_pairs(result)
-        cigar_length = get_cigar_length(pairs, max_mismatch=3, n_runs=[[10,14]], min_match=1)
+        cigar_length = get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch=3, n_runs=[[10, 14]], min_match=1)
         expected = 23
         self.assertEqual(expected, cigar_length)
 

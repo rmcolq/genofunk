@@ -95,18 +95,50 @@ def get_alignment_start_end(result):
                 ref_start += i
     return ref_start, ref_end - 1, read_start, read_end - 1
 
-def get_cigar_length(pairs, max_mismatch, n_runs=[], min_match=3):
+def get_position_next_indel_in_cigar(pairs, min_position=0):
+    """
+    Get the position of first indel base in cigar
+    :param pairs:
+    :min_position:
+    :return: number
+    """
+    total = 0
+    for c,i in pairs:
+        if total + i < min_position:
+            total += i
+        elif c in ["I", "D"]:
+            return total
+        else:
+            total += i
+    return total
+
+def get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch, n_runs=[], min_match=3, min_position=0):
     """
     Find the length of aligned sequence until the first insertion/deletion/padding
     :param pairs:
     :return: number
     """
+    logging.debug("get_position_first_indel_or_mismatch_in_cigar with max_mismatch %i, min_match %i, min_position %i" %(max_mismatch, min_match, min_position))
+    logging.debug(pairs)
     #pairs = parse_cigar_pairs(result)
     total = 0
     subtotal = 0
     found_n_run = False
     have_min_match_after_n_run = False
     for c,i in pairs:
+        #logging.debug("%s %i %i %i %s %s" %(c,i,total,subtotal, found_n_run, have_min_match_after_n_run))
+        #if total + subtotal + i < min_position:
+        #    logging.debug("total + subtotal + i < min_position")
+        #    subtotal += i
+        #    if c in ["X"] and i > max_mismatch:
+        #        for run in n_runs:
+        #            if run[0] <= subtotal <= run[1]:
+        #                found_n_run = True
+        #                have_min_match_after_n_run = False
+        #                break
+        #    elif c in ["="] and found_n_run and i >= min_match:
+        #            found_n_run = False
+        #            have_min_match_after_n_run = True
         if c in ["="]:
             total += i + subtotal
             subtotal = 0
@@ -128,6 +160,7 @@ def get_cigar_length(pairs, max_mismatch, n_runs=[], min_match=3):
                     break
             if not found_n_run:
                 break
+    logging.debug("Return total %i" %total)
     return total
 
 def cigar_has_no_indels(pairs):
@@ -289,8 +322,8 @@ def is_longer_cigar_prefix(old_cigar_pairs, new_cigar_pairs, max_mismatch):
     :param new_cigar_pairs:
     :return: bool
     """
-    old_cigar_length = get_cigar_length(old_cigar_pairs, max_mismatch)
-    new_cigar_length = get_cigar_length(new_cigar_pairs, max_mismatch)
+    old_cigar_length = get_position_first_indel_or_mismatch_in_cigar(old_cigar_pairs, max_mismatch)
+    new_cigar_length = get_position_first_indel_or_mismatch_in_cigar(new_cigar_pairs, max_mismatch)
     logging.debug("Comparing %s and %s and found improvement to be %s" % (old_cigar_length, new_cigar_length,
                                                                               old_cigar_length < new_cigar_length))
     return old_cigar_length <= new_cigar_length

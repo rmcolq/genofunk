@@ -283,22 +283,67 @@ class Annotate:
 
             return None, None
 
+    def get_stop_codon_positions(self, query_sequence, stop_codons, min_frame_shift_position):
+        positions = []
+        for stop in stop_codons:
+            position = query_sequence.find(stop, min_frame_shift_position)
+            logging.debug("searching for %s in %s after position %i" %(stop, query_sequence, min_frame_shift_position))
+            if position > 0:
+                positions.append(position)
+                logging.debug("Found stop position %i" %position)
+        return positions
+
+    def get_n_codon_positions(self, record, found_coordinates, min_frame_shift_position):
+        positions = []
+        query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates, amino_acid=False)
+
+        next = "N"
+        min_pos = 3*min_frame_shift_position
+        attempts = 0
+        while next == "N" and attempts < 100:
+            position = query_sequence.find("NNN", min_pos)
+            if 0 < position < len(query_sequence) - 1:
+                while position < len(query_sequence) - 1 and query_sequence[position + 1] == "N":
+                    position += 1
+                if position + 1 > len(query_sequence) - 1:
+                    position = -1
+                    break
+                next = query_sequence[position + 1]
+            elif position > 0 and position % 3 != 0:
+                next = "N"
+            else:
+                break
+            min_pos = position + 1
+            logging.debug("%i %s %i" %(position, next, min_pos))
+            attempts += 1
+        if position > 0 and position % 3 == 0:
+            positions.append(int(position/3))
+            logging.debug("Found NNN position %i" %int(position/3))
+        return positions
+
+    def get_cigar_based_positions(self, query_sequence, cigar_pairs, max_mismatch, min_frame_shift_position):
+        positions = []
+        min_run_length = max_mismatch
+        n_runs = find_n_runs(query_sequence, min_run_length)
+        position = get_position_first_indel_or_mismatch_in_cigar(cigar_pairs, max_mismatch, n_runs, min_position=min_frame_shift_position)
+        if position > min_frame_shift_position:
+            positions.append(position)
+        return positions
+
     def get_position_for_frame_shift(self, found_coordinates, record, cigar_pairs, stop_codons, max_mismatch,
                                      min_frame_shift_position=0):
+        #logging.debug("Get position for frame shift")
         positions = []
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates)
-        logging.debug("Have query sequence %s and coordinates %s" % (query_sequence, coordinates))
-        for stop in stop_codons:
-            position = query_sequence.find(stop)
-            if position > min_frame_shift_position:
-                positions.append(position)
-                logging.debug("Found stop codon position %d" % position)
-        min_run_length = max_mismatch
-        n_runs = find_n_runs(query_sequence,min_run_length)
-        cigar_length = get_cigar_length(cigar_pairs, max_mismatch, n_runs)
-        logging.debug("Found cigar length position %d" % cigar_length)
-        if cigar_length > min_frame_shift_position:
-            positions.append(cigar_length)
+        #logging.debug("Have query sequence %s and coordinates %s" % (query_sequence, coordinates))
+
+        positions.extend(self.get_stop_codon_positions(query_sequence, stop_codons, min_frame_shift_position))
+        #logging.debug(positions)
+        positions.extend(self.get_n_codon_positions(record, found_coordinates, min_frame_shift_position))
+        #logging.debug(positions)
+        positions.extend(self.get_cigar_based_positions(query_sequence, cigar_pairs, max_mismatch, min_frame_shift_position))
+        #logging.debug(positions)
+
         if len(positions) == 0:
             return None
         return min(positions)
@@ -344,7 +389,8 @@ class Annotate:
             return coordinate_difference, cigar_pairs, updated, e
 
     def choose_best_frame_shift(self, feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs,
-                                stop_codons, max_mismatch, coordinate_difference=0, min_frame_shift_position=0):
+                                stop_codons, max_mismatch, include_compensatory, coordinate_difference=0,
+                                min_frame_shift_position=0):
         """
         Compares the frame shifts obtained by inserting or deleting 1 or 2 letters in the nucleotide query sequence to
         see which if any returns the greatest improvement to the alignment cigar
@@ -412,7 +458,7 @@ class Annotate:
             min_run_length = max_mismatch
             n_runs = find_n_runs(query_sequence, min_run_length)
             cigar_pairs = parse_cigar_pairs(result)
-            cigar_length = get_cigar_length(cigar_pairs, max_mismatch, n_runs)
+            cigar_length = get_position_first_indel_or_mismatch_in_cigar(cigar_pairs, max_mismatch, n_runs)
             if cigar_length > min_run_length:
                 return query_sequence, query_coordinates, n_runs, cigar_pairs
             shift += 1
@@ -424,7 +470,8 @@ class Annotate:
 
         return query_sequence, found_coordinates, n_runs, cigar_pairs
     
-    def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, stop_codons, max_mismatch, record_id=0):
+    def discover_frame_shift_edits(self, feature_coordinates, found_coordinates, stop_codons, max_mismatch,
+                                   include_compensatory, record_id=0):
         """
         Gradually introduce frame shifts which improve the amino acid alignment prefix between reference and query
         sequences in an interval
@@ -442,7 +489,7 @@ class Annotate:
         coordinate_difference = 0
         record = self.consensus_sequence[record_id]
         min_frame_shift_position = 0
-        while get_cigar_length(cigar_pairs, max_mismatch, n_runs) < len(ref_sequence):
+        while get_position_first_indel_or_mismatch_in_cigar(cigar_pairs, max_mismatch, n_runs) < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
             coordinate_difference, cigar_pairs, updated, record, min_frame_shift_position = \
                                                           self.choose_best_frame_shift(feature_coordinates,
@@ -452,6 +499,7 @@ class Annotate:
                                                                                        cigar_pairs,
                                                                                        stop_codons,
                                                                                        max_mismatch,
+                                                                                       include_compensatory,
                                                                                        coordinate_difference,
                                                                                        min_frame_shift_position)
             logging.debug("new coordinate difference is %d" %coordinate_difference)
@@ -505,7 +553,7 @@ class Annotate:
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"],
-            max_mismatch=3, min_seq_length=28000):
+            max_mismatch=3, include_compensatory=False, min_seq_length=28000):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
@@ -530,7 +578,7 @@ class Annotate:
                         continue
                     logging.debug("Identified features coordinates %s" % str_coordinates(query_coordinates))
                     coordinate_difference, query_coordinates = self.discover_frame_shift_edits(coordinates, query_coordinates,
-                                                                            stop_codons, max_mismatch, record_id=record_id)
+                                                                            stop_codons, max_mismatch, include_compensatory, record_id=record_id)
                     logging.debug("Checking features coordinates %s" % str_coordinates(query_coordinates))
                     logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
                     logging.debug("Check features coordinates %s" % str_coordinates(query_coordinates))
