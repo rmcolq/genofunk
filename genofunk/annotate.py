@@ -204,7 +204,8 @@ class Annotate:
             logging.debug("Did not update coordinates")
         return query_start, query_end
 
-    def identify_feature_coordinates(self, feature_coordinates, record_id=0, min_score = 300, max_query_start_offset = 200, max_nucleotide_length_difference = 10):
+    def identify_feature_coordinates(self, feature_coordinates, record_id=0, min_score = 300,
+                                     max_query_start_offset = 200, max_nucleotide_length_difference = 10):
         """
         Find the region in query/consensus sequence which aligns to sequence in reference nucleotide sequence with
         coordinates feature_coordinates
@@ -386,7 +387,7 @@ class Annotate:
 
     def choose_best_frame_shift(self, feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs,
                                 stop_codons, max_mismatch, include_compensatory, coordinate_difference=0,
-                                min_frame_shift_position=0):
+                                shift_position=0):
         """
         Compares the frame shifts obtained by inserting or deleting 1 or 2 letters in the nucleotide query sequence to
         see which if any returns the greatest improvement to the alignment cigar
@@ -402,11 +403,7 @@ class Annotate:
 
         shifts = [("","N"), ("N",""), ("","NN"),("NN","")]
         frame_shift_results = []
-        shift_position = self.get_position_for_frame_shift(found_coordinates, record, cigar_pairs, stop_codons,
-                                                           max_mismatch, min_frame_shift_position)
-        if shift_position is None:
-            return coordinate_difference, cigar_pairs, False, record, min_frame_shift_position
-        logging.debug("Try a frame shift at position %d" % shift_position)
+
         for shift_from, shift_to in shifts:
             result = self.frame_shift(feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs,
                                       stop_codons, shift_from, shift_to, shift_position, include_compensatory,
@@ -414,10 +411,8 @@ class Annotate:
             if result[2]:
                 frame_shift_results.append(result)
 
-        if len(frame_shift_results) == 0 and shift_position > min_frame_shift_position:
-            return coordinate_difference, cigar_pairs, True, record, shift_position
-        elif len(frame_shift_results) == 0:
-            return coordinate_difference, cigar_pairs, False, record, shift_position
+        if len(frame_shift_results) == 0:
+            return coordinate_difference, cigar_pairs, False, record
 
         logging.debug("Choose winning shift")
         best = 0
@@ -432,12 +427,12 @@ class Annotate:
         record = edit.apply_edit(record, coordinate_difference)
         self.edits.add_edit(edit)
 
-        return updated_coordinate_difference, cigar_pairs, updated, record, shift_position
+        return updated_coordinate_difference, cigar_pairs, updated, record
 
     def remove_all_edits(self, record):
         if len(self.edits.edits) == 0:
             return
-        self.edits.edits.reverse()
+        self.edits.sort(reverse=True, seq_position=True)
         for edit in self.edits.edits:
             if edit.edit_applied:
                 record = edit.remove_edit(record)
@@ -486,9 +481,11 @@ class Annotate:
         coordinate_difference = 0
         record = self.consensus_sequence[record_id]
         min_frame_shift_position = 0
-        while get_position_first_indel_or_mismatch_in_cigar(cigar_pairs, max_mismatch, n_runs) < len(ref_sequence):
+        candidate_shift_position = self.get_position_for_frame_shift(found_coordinates, record, cigar_pairs,
+                                                                    stop_codons, max_mismatch, min_frame_shift_position)
+        while candidate_shift_position is not None and candidate_shift_position < len(ref_sequence):
             logging.debug("Cigar shorter than ref: try a frame shift")
-            coordinate_difference, cigar_pairs, updated, record, min_frame_shift_position = \
+            coordinate_difference, cigar_pairs, updated, record = \
                                                           self.choose_best_frame_shift(feature_coordinates,
                                                                                        found_coordinates,
                                                                                        record,
@@ -498,14 +495,16 @@ class Annotate:
                                                                                        max_mismatch,
                                                                                        include_compensatory,
                                                                                        coordinate_difference,
-                                                                                       min_frame_shift_position)
-            logging.debug("new coordinate difference is %d" %coordinate_difference)
-            logging.debug("Checked found coordinates %s" % str_coordinates(found_coordinates))
+                                                                                       candidate_shift_position)
+            #logging.debug("new coordinate difference is %d" %coordinate_difference)
+            #logging.debug("Checked found coordinates %s" % str_coordinates(found_coordinates))
+            min_frame_shift_position = candidate_shift_position
+            candidate_shift_position = self.get_position_for_frame_shift(found_coordinates, record, cigar_pairs,
+                                                                    stop_codons, max_mismatch, min_frame_shift_position)
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)
         self.remove_all_edits(record)
-        logging.debug("Second checked found coordinates %s" % str_coordinates(found_coordinates))
         return coordinate_difference, found_coordinates
 
     def save_found_coordinates(self, filepath, write_format='a'):
@@ -548,6 +547,7 @@ class Annotate:
         else:
             logging.debug("Good reading frame for query sequence %s with "
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
+        self.remove_all_edits(record)
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"],
             max_mismatch=3, include_compensatory=False, min_seq_length=28000, allow_stop_codons_in_middle=True):
@@ -577,7 +577,6 @@ class Annotate:
                     logging.debug("Identified features coordinates %s" % str_coordinates(query_coordinates))
                     coordinate_difference, query_coordinates = self.discover_frame_shift_edits(coordinates, query_coordinates,
                                                                             stop_codons, max_mismatch, include_compensatory, record_id=record_id)
-                    logging.debug("Checking features coordinates %s" % str_coordinates(query_coordinates))
                     logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
                     logging.debug("Check features coordinates %s" % str_coordinates(query_coordinates))
                     query_coordinate_pairs.append({'start': query_coordinates[0], 'end': query_coordinates[1] + coordinate_difference})

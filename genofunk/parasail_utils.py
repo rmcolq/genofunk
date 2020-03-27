@@ -118,8 +118,8 @@ def get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch, n_runs=[]
     :param pairs:
     :return: number
     """
-    logging.debug("get_position_first_indel_or_mismatch_in_cigar with max_mismatch %i, min_match %i, min_position %i" %(max_mismatch, min_match, min_position))
-    logging.debug(pairs)
+    #logging.debug("get_position_first_indel_or_mismatch_in_cigar with max_mismatch %i, min_match %i, min_position %i" %(max_mismatch, min_match, min_position))
+    #logging.debug(pairs)
     #pairs = parse_cigar_pairs(result)
     total = 0
     subtotal = 0
