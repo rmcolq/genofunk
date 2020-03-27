@@ -23,6 +23,7 @@ class Annotate:
         self.edits = None
         self.coordinates = {}
         self.closest_accession = closest_accession
+        self.problematic = set()
         
     def load_reference_info(self, filepath):
         """
@@ -543,7 +544,7 @@ class Annotate:
         if not is_open_reading_frame(query_sequence, allow_stop_codons_in_middle=allow_stop_codons_in_middle):
             logging.debug("After finding edits, still have bad open reading frame for query sequence %s with "
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
-            sys.exit()
+            self.problematic.add(record_id)
         else:
             logging.debug("Good reading frame for query sequence %s with "
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
@@ -571,6 +572,7 @@ class Annotate:
                                                                                record_id=record_id)
                     if not query_coordinates[1]:
                         logging.debug("No good alignment to features coordinates - skip this feature/consensus combination")
+                        self.problematic.add(record_id)
                         continue
                     logging.debug("Identified features coordinates %s" % str_coordinates(query_coordinates))
                     coordinate_difference, query_coordinates = self.discover_frame_shift_edits(coordinates, query_coordinates,
@@ -590,3 +592,12 @@ class Annotate:
         self.save_found_coordinates(consensus_sequence_filepath + ".coordinates", write_format='w')
         self.edits.save(consensus_sequence_filepath + ".edits", filter_by_applied=False)
         self.consensus_sequence.close()
+
+        if len(self.problematic) > 0:
+            logging.info("A number of records were problematic and after auto-discovering edits they did not have the "
+                         "appropriate format for one or more features. This could mean the feature was not found,"
+                         "or that the sequence with applied edits did not start with an M and end with a stop, or may"
+                         "have had stops in the middle. Please check manually and update editfile.")
+            logging.info("These were:")
+            for id in self.problematic:
+                logging.info(id)
