@@ -156,11 +156,35 @@ def str_coordinates(coordinates):
     else:
         return ",".join([str(i) for i in coordinates])
 
-def is_open_reading_frame(amino_acid_sequence, allow_stop_codons=False, allow_missing=True, stop_codons=['*']):
+def get_stop_codon_positions(query_sequence, stop_codons, min_frame_shift_position):
+    positions = []
+    for stop in stop_codons:
+        position = query_sequence.find(stop, min_frame_shift_position)
+        logging.debug("searching for %s in %s after position %i" % (stop, query_sequence, min_frame_shift_position))
+        if position > 0:
+            positions.append(position)
+            logging.debug("Found stop position %i" % position)
+    return positions
+
+def get_num_stop_codons(query_sequence, stop_codons, min_frame_shift_position):
+    count = 0
+    for stop in stop_codons:
+        count += query_sequence.count(stop, min_frame_shift_position)
+    return count
+
+def has_fewer_stop_codons(old_sequence, new_sequence, stop_codons):
+    old_count = get_num_stop_codons(old_sequence[:-2], stop_codons, min_frame_shift_position=0)
+    new_count = get_num_stop_codons(new_sequence[:-2], stop_codons, min_frame_shift_position=0)
+    if new_count <= old_count:
+        return True
+    return False
+
+def is_open_reading_frame(amino_acid_sequence, allow_stop_codons_in_middle=False, allow_missing=True,
+                          stop_codons=['*']):
     if len(amino_acid_sequence) < 3:
         return False
 
-    if not allow_stop_codons:
+    if not allow_stop_codons_in_middle:
         for letter in amino_acid_sequence[1:-1]:
             if letter in stop_codons:
                 return False

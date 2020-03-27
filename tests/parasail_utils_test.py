@@ -102,7 +102,7 @@ class TestParasailUtils(unittest.TestCase):
         self.assertEqual(is_extended_cigar_prefix(c4, c5), False)
         self.assertEqual(is_extended_cigar_prefix(c5, c4), False)
 
-    def test_is_improved_cigar_prefix(self):
+    def test_is_improved_cigar(self):
         c1 = [("=", 12), ("X", 1), ("=", 17)]
         c2 = [("=", 10), ("X", 3), ("=", 17)]
         c3 = [("=", 12), ("X", 3), ("=", 15)]
@@ -110,54 +110,54 @@ class TestParasailUtils(unittest.TestCase):
         c5 = [("=", 12), ("D", 1), ("=", 17)]
         c6 = [("=", 12)]
 
-        self.assertEqual(is_improved_cigar_prefix(c1, c1), False)
-        self.assertEqual(is_improved_cigar_prefix(c2, c2), False)
-        self.assertEqual(is_improved_cigar_prefix(c3, c3), False)
-        self.assertEqual(is_improved_cigar_prefix(c4, c4), False)
-        self.assertEqual(is_improved_cigar_prefix(c5, c5), False)
-        self.assertEqual(is_improved_cigar_prefix(c6, c6), False)
+        self.assertEqual(is_improved_cigar(c1, c1), False)
+        self.assertEqual(is_improved_cigar(c2, c2), False)
+        self.assertEqual(is_improved_cigar(c3, c3), False)
+        self.assertEqual(is_improved_cigar(c4, c4), False)
+        self.assertEqual(is_improved_cigar(c5, c5), False)
+        self.assertEqual(is_improved_cigar(c6, c6), False)
 
-        self.assertEqual(is_improved_cigar_prefix(c1, c2), False)
-        self.assertEqual(is_improved_cigar_prefix(c2, c1), True)
-        self.assertEqual(is_improved_cigar_prefix(c1, c3), False)
-        self.assertEqual(is_improved_cigar_prefix(c3, c1), True)
-        self.assertEqual(is_improved_cigar_prefix(c1, c4), False)
-        self.assertEqual(is_improved_cigar_prefix(c4, c1), True)
-        self.assertEqual(is_improved_cigar_prefix(c1, c5), False)
-        self.assertEqual(is_improved_cigar_prefix(c5, c1), True)
-        self.assertEqual(is_improved_cigar_prefix(c6, c1), True)
-        self.assertEqual(is_improved_cigar_prefix(c1, c6), False)
+        self.assertEqual(is_improved_cigar(c1, c2), False)
+        self.assertEqual(is_improved_cigar(c2, c1), True)
+        self.assertEqual(is_improved_cigar(c1, c3), False)
+        self.assertEqual(is_improved_cigar(c3, c1), True)
+        self.assertEqual(is_improved_cigar(c1, c4), False)
+        self.assertEqual(is_improved_cigar(c4, c1), True)
+        self.assertEqual(is_improved_cigar(c1, c5), False)
+        self.assertEqual(is_improved_cigar(c5, c1), True)
+        self.assertEqual(is_improved_cigar(c6, c1), True)
+        self.assertEqual(is_improved_cigar(c1, c6), False)
 
-        self.assertEqual(is_improved_cigar_prefix(c3, c2), False)
-        self.assertEqual(is_improved_cigar_prefix(c2, c3), True)
-        self.assertEqual(is_improved_cigar_prefix(c4, c2, True), False)
-        self.assertEqual(is_improved_cigar_prefix(c4, c2, False), False)
-        self.assertEqual(is_improved_cigar_prefix(c2, c4), True)
-        self.assertEqual(is_improved_cigar_prefix(c5, c2), False)
-        self.assertEqual(is_improved_cigar_prefix(c2, c5), True)
-        self.assertEqual(is_improved_cigar_prefix(c6, c2), False) # funny case, prefix is better, overall is worse
-        self.assertEqual(is_improved_cigar_prefix(c2, c6), True)
+        self.assertEqual(is_improved_cigar(c3, c2), False)
+        self.assertEqual(is_improved_cigar(c2, c3), True)
+        self.assertEqual(is_improved_cigar(c4, c2, True), False)
+        self.assertEqual(is_improved_cigar(c4, c2, False), False)
+        self.assertEqual(is_improved_cigar(c2, c4), True)
+        self.assertEqual(is_improved_cigar(c5, c2), False)
+        self.assertEqual(is_improved_cigar(c2, c5), True)
+        self.assertEqual(is_improved_cigar(c6, c2), False) # funny case, prefix is better, overall is worse
+        self.assertEqual(is_improved_cigar(c2, c6), True)
 
-        self.assertEqual(is_improved_cigar_prefix(c3, c4), False)
-        self.assertEqual(is_improved_cigar_prefix(c4, c3), True)
-        self.assertEqual(is_improved_cigar_prefix(c3, c5), False)
-        self.assertEqual(is_improved_cigar_prefix(c5, c3), True)
-        self.assertEqual(is_improved_cigar_prefix(c3, c6), False)
-        self.assertEqual(is_improved_cigar_prefix(c6, c3), True)
+        self.assertEqual(is_improved_cigar(c3, c4), False)
+        self.assertEqual(is_improved_cigar(c4, c3), True)
+        self.assertEqual(is_improved_cigar(c3, c5), False)
+        self.assertEqual(is_improved_cigar(c5, c3), True)
+        self.assertEqual(is_improved_cigar(c3, c6), False)
+        self.assertEqual(is_improved_cigar(c6, c3), True)
 
-        self.assertEqual(is_improved_cigar_prefix(c4, c5), False)
-        self.assertEqual(is_improved_cigar_prefix(c5, c4), False)
-        self.assertEqual(is_improved_cigar_prefix(c4, c6), False)
-        self.assertEqual(is_improved_cigar_prefix(c6, c4), True)
+        self.assertEqual(is_improved_cigar(c4, c5), False)
+        self.assertEqual(is_improved_cigar(c5, c4), False)
+        self.assertEqual(is_improved_cigar(c4, c6), False)
+        self.assertEqual(is_improved_cigar(c6, c4), True)
 
-        self.assertEqual(is_improved_cigar_prefix(c6, c5), True)
-        self.assertEqual(is_improved_cigar_prefix(c5, c6), False)
+        self.assertEqual(is_improved_cigar(c6, c5), True)
+        self.assertEqual(is_improved_cigar(c5, c6), False)
 
-    def test_is_improved_cigar_prefix_real_examples(self):
+    def test_is_improved_cigar_real_examples(self):
         c1 = [('=', 5), ('X', 1), ('=', 5), ('X', 19)]
         c2 = [('=', 5), ('X', 1), ('=', 4), ('X', 1), ('=', 9), ('X', 1), ('=', 9)]
-        self.assertEqual(is_improved_cigar_prefix(c1, c2), True)
+        self.assertEqual(is_improved_cigar(c1, c2), True)
 
         c3 = [('=', 102), ('X', 1), ('=', 122)]
         c4 = [('=', 102), ('X', 1), ('=', 121), ('X', 1)]
-        self.assertEqual(is_improved_cigar_prefix(c3, c4), False)
+        self.assertEqual(is_improved_cigar(c3, c4), False)

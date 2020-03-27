@@ -77,6 +77,18 @@ def main(args=None):
         help="Sequences shorter than this length are ignored as partial sequences"
     )
     subparser_annotate.add_argument(
+        "--no_stops_in_middle",
+        dest="no_stops_in_middle",
+        action="store_true",
+        help="Check that features have no stop codons in the middle once edits have been discovered"
+    )
+    subparser_annotate.add_argument(
+        "--find_compensating_frame_shifts",
+        dest="find_compensating_frame_shifts",
+        action="store_true",
+        help="Discover frame shifts with a compensatory shift downstream"
+    )
+    subparser_annotate.add_argument(
         "-v",
         "--verbose",
         dest="verbose",

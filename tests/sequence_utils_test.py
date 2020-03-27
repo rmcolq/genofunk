@@ -55,17 +55,17 @@ class TestSequenceUtils(unittest.TestCase):
         result = is_open_reading_frame(amino_acid_sequence)
         self.assertFalse(result)
 
-    def test_is_open_reading_frame_wrong_start(self):
+    def test_is_open_reading_frame_wrong_end(self):
         amino_acid_sequence = "MNATIL*S"
         result = is_open_reading_frame(amino_acid_sequence)
         self.assertFalse(result)
 
-    def test_is_open_reading_frame_wrong_start(self):
+    def test_is_open_reading_frame_stop_in_middle(self):
         amino_acid_sequence = "MNATIL*S*"
-        result = is_open_reading_frame(amino_acid_sequence)
+        result = is_open_reading_frame(amino_acid_sequence, allow_stop_codons_in_middle=False)
         self.assertFalse(result)
 
-    def test_is_open_reading_frame_wrong_start(self):
+    def test_is_open_reading_frame_stop_in_middle_allowed(self):
         amino_acid_sequence = "MNATIL*S*"
-        result = is_open_reading_frame(amino_acid_sequence, allow_stop_codons=True)
+        result = is_open_reading_frame(amino_acid_sequence, allow_stop_codons_in_middle=True)
         self.assertTrue(result)

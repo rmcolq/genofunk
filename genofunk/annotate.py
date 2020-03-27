@@ -283,16 +283,6 @@ class Annotate:
 
             return None, None
 
-    def get_stop_codon_positions(self, query_sequence, stop_codons, min_frame_shift_position):
-        positions = []
-        for stop in stop_codons:
-            position = query_sequence.find(stop, min_frame_shift_position)
-            logging.debug("searching for %s in %s after position %i" %(stop, query_sequence, min_frame_shift_position))
-            if position > 0:
-                positions.append(position)
-                logging.debug("Found stop position %i" %position)
-        return positions
-
     def get_n_codon_positions(self, record, found_coordinates, min_frame_shift_position):
         positions = []
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates, amino_acid=False)
@@ -337,7 +327,7 @@ class Annotate:
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates)
         #logging.debug("Have query sequence %s and coordinates %s" % (query_sequence, coordinates))
 
-        positions.extend(self.get_stop_codon_positions(query_sequence, stop_codons, min_frame_shift_position))
+        positions.extend(get_stop_codon_positions(query_sequence, stop_codons, min_frame_shift_position))
         #logging.debug(positions)
         positions.extend(self.get_n_codon_positions(record, found_coordinates, min_frame_shift_position))
         #logging.debug(positions)
@@ -349,8 +339,8 @@ class Annotate:
         return min(positions)
 
 
-    def frame_shift(self, feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs, shift_from,
-                    shift_to, shift_position, coordinate_difference=0):
+    def frame_shift(self, feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs, stop_codons,
+                    shift_from, shift_to, shift_position, include_compensatory, coordinate_difference=0):
         """
         Create a potential edit which applies a frame shift at a given position in the query sequence
         :param feature_coordinates: coordinates of features in reference sequence
@@ -367,6 +357,7 @@ class Annotate:
         logging.debug("Frame_shift from '%s' to '%s'" %(shift_from, shift_to))
 
         record_name = record.id
+        old_query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates)
         e = Edit(record_name, found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
                  feature_coordinates[0] + 3 * (shift_position))
         record = e.apply_edit(record, coordinate_difference)
@@ -380,7 +371,11 @@ class Annotate:
         updated = False
         record = e.remove_edit(record)
 
-        if is_improved_cigar_prefix(cigar_pairs, new_cigar_pairs):
+        logging.debug("include compensatory %s, has_fewer_stop_codons %s, is improved_cigar %s"
+                      %(include_compensatory, has_fewer_stop_codons(old_query_sequence, query_sequence, stop_codons),
+                        is_improved_cigar(cigar_pairs, new_cigar_pairs)))
+        if (include_compensatory or has_fewer_stop_codons(old_query_sequence, query_sequence, stop_codons)) and \
+                is_improved_cigar(cigar_pairs, new_cigar_pairs):
             logging.debug("Keep frame shift as improvement")
             updated = True
             return updated_coordinate_difference, new_cigar_pairs, updated, e
@@ -413,7 +408,8 @@ class Annotate:
         logging.debug("Try a frame shift at position %d" % shift_position)
         for shift_from, shift_to in shifts:
             result = self.frame_shift(feature_coordinates, found_coordinates, record, ref_sequence, cigar_pairs,
-                                      shift_from, shift_to, shift_position, coordinate_difference)
+                                      stop_codons, shift_from, shift_to, shift_position, include_compensatory,
+                                      coordinate_difference)
             if result[2]:
                 frame_shift_results.append(result)
 
@@ -425,7 +421,7 @@ class Annotate:
         logging.debug("Choose winning shift")
         best = 0
         for i,result in enumerate(frame_shift_results):
-            if is_improved_cigar_prefix(frame_shift_results[best][1], result[1], consider_if_frameshift_added=False) \
+            if is_improved_cigar(frame_shift_results[best][1], result[1], consider_if_frameshift_added=False) \
                     and is_longer_cigar_prefix(frame_shift_results[best][1], result[1], max_mismatch):
                 best = i
                 logging.debug("Override best with %d" %i)
@@ -534,7 +530,7 @@ class Annotate:
                           %(ref_sequence, str_coordinates(all_ref_coordinates)))
         sys.exit()
 
-    def check_have_open_reading_frame_query(self, record_id, query_coordinate_pairs):
+    def check_have_open_reading_frame_query(self, record_id, query_coordinate_pairs, allow_stop_codons_in_middle):
         all_query_coordinates = []
         for pair in query_coordinate_pairs:
             all_query_coordinates.append(pair['start'])
@@ -544,7 +540,7 @@ class Annotate:
 
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=all_query_coordinates)
 
-        if not is_open_reading_frame(query_sequence):
+        if not is_open_reading_frame(query_sequence, allow_stop_codons_in_middle=allow_stop_codons_in_middle):
             logging.debug("After finding edits, still have bad open reading frame for query sequence %s with "
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
             sys.exit()
@@ -553,7 +549,7 @@ class Annotate:
                           "coordinates %s" %(query_sequence, str_coordinates(all_query_coordinates)))
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"],
-            max_mismatch=3, include_compensatory=False, min_seq_length=28000):
+            max_mismatch=3, include_compensatory=False, min_seq_length=28000, allow_stop_codons_in_middle=True):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
@@ -584,7 +580,7 @@ class Annotate:
                     logging.debug("Check features coordinates %s" % str_coordinates(query_coordinates))
                     query_coordinate_pairs.append({'start': query_coordinates[0], 'end': query_coordinates[1] + coordinate_difference})
 
-                self.check_have_open_reading_frame_query(record_id, query_coordinate_pairs)
+                self.check_have_open_reading_frame_query(record_id, query_coordinate_pairs, allow_stop_codons_in_middle)
 
                 if len(query_coordinate_pairs) == 1:
                     self.coordinates[key][self.consensus_sequence[record_id].id] = query_coordinate_pairs[0]

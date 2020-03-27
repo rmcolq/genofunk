@@ -379,6 +379,7 @@ class TestAnnotate(unittest.TestCase):
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 12)]
+        stop_codons = ['*']
         shift_from = ""
         shift_to = "N"
         shift_position = 12
@@ -387,9 +388,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, 1)
         self.assertEqual(result_cigar_pairs, [("=", 12), ("X", 1), ("=", 17)])
         self.assertEqual(result_updated, True)
@@ -401,6 +404,7 @@ class TestAnnotate(unittest.TestCase):
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 14)]
+        stop_codons = ['*']
         shift_from = ""
         shift_to = "N"
         shift_position = 14
@@ -409,9 +413,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, 0)
         self.assertEqual(result_cigar_pairs, cigar_pairs)
         self.assertEqual(result_updated, False)
@@ -429,6 +435,7 @@ class TestAnnotate(unittest.TestCase):
         print(cigar_pairs)
 
         cigar_pairs = [("=", 20)]
+        stop_codons = ['*']
         shift_from = ""
         shift_to = "NN"
         shift_position = 20
@@ -437,9 +444,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, 2)
         self.assertEqual(result_cigar_pairs, [("=", 20), ("X", 1), ("=", 9)])
         self.assertEqual(result_updated, True)
@@ -451,6 +460,7 @@ class TestAnnotate(unittest.TestCase):
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 22)]
+        stop_codons = ['*']
         shift_from = ""
         shift_to = "NN"
         shift_position = 22
@@ -459,9 +469,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, 0)
         self.assertEqual(result_cigar_pairs, cigar_pairs)
         self.assertEqual(result_updated, False)
@@ -479,6 +491,7 @@ class TestAnnotate(unittest.TestCase):
         print(cigar_pairs)
 
         cigar_pairs = [("=", 7)]
+        stop_codons = ['*']
         shift_from = "N"
         shift_to = ""
         shift_position = 7
@@ -487,9 +500,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, -1)
         self.assertEqual(get_position_first_indel_or_mismatch_in_cigar(result_cigar_pairs, max_mismatch=3), 29)
         self.assertEqual(result_updated, True)
@@ -501,6 +516,7 @@ class TestAnnotate(unittest.TestCase):
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 9)]
+        stop_codons = ['*']
         shift_from = "N"
         shift_to = ""
         shift_position = 9
@@ -509,9 +525,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, 0)
         self.assertEqual(result_cigar_pairs, cigar_pairs)
         self.assertEqual(result_updated, False)
@@ -529,6 +547,7 @@ class TestAnnotate(unittest.TestCase):
         print(cigar_pairs)
 
         cigar_pairs = [("=", 12)]
+        stop_codons = ['*']
         shift_from = "NN"
         shift_to = ""
         shift_position = 12
@@ -537,9 +556,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, -2)
         self.assertEqual(get_position_first_indel_or_mismatch_in_cigar(result_cigar_pairs, max_mismatch=3), 29)
         self.assertEqual(result_updated, True)
@@ -551,6 +572,7 @@ class TestAnnotate(unittest.TestCase):
         record = self.a.consensus_sequence[record_id]
         ref_sequence, coordinates = self.a.get_reference_sequence(coordinates=orf_coordinates)
         cigar_pairs = [("=", 14)]
+        stop_codons = ['*']
         shift_from = "NN"
         shift_to = ""
         shift_position = 14
@@ -559,9 +581,11 @@ class TestAnnotate(unittest.TestCase):
                                                                                         record,
                                                                                         ref_sequence,
                                                                                         cigar_pairs,
+                                                                                        stop_codons,
                                                                                         shift_from,
                                                                                         shift_to,
-                                                                                        shift_position)
+                                                                                        shift_position,
+                                                                                        include_compensatory=False)
         self.assertEqual(result_coordinate_difference, 0)
         self.assertEqual(result_cigar_pairs, cigar_pairs)
         self.assertEqual(result_updated, False)
@@ -577,6 +601,17 @@ class TestAnnotate(unittest.TestCase):
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
         self.assertEqual(len(self.a.edits.edits),0)
 
+    def test_discover_frame_shift_edits_mismatch_insertion_deletion_mismatch_include_compensatory(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        stop_codons = ["*"]
+        max_mismatch = 1
+        include_compensatory = True
+        record_id = "seq1_with_mismatch_insertion_deletion_mismatch"
+        record = self.a.consensus_sequence[record_id]
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
+        self.assertEqual(len(self.a.edits.edits),2)
+
     def test_discover_frame_shift_edits_mismatch_insertion_deletion_mismatch(self):
         orf_coordinates = (3, 93)
         found_coordinates = (0, 90)
@@ -586,6 +621,18 @@ class TestAnnotate(unittest.TestCase):
         record_id = "seq1_with_mismatch_insertion_deletion_mismatch"
         record = self.a.consensus_sequence[record_id]
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
+        self.assertEqual(len(self.a.edits.edits),2) # doesn't have to find these, but does
+
+    def test_discover_frame_shift_edits_double_deletion_mismatch_insertion_include_compensatory(self):
+        orf_coordinates = (3, 93)
+        found_coordinates = (0, 90)
+        stop_codons = ["*"]
+        max_mismatch = 1
+        include_compensatory = True
+        record_id = "seq1_with_double_deletion_mismatch_insertion"
+        record = self.a.consensus_sequence[record_id]
+        self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
+        self.a.edits.sort()
         self.assertEqual(len(self.a.edits.edits),2)
 
     def test_discover_frame_shift_edits_double_deletion_mismatch_insertion(self):
@@ -598,7 +645,7 @@ class TestAnnotate(unittest.TestCase):
         record = self.a.consensus_sequence[record_id]
         self.a.discover_frame_shift_edits(orf_coordinates, found_coordinates, stop_codons, max_mismatch, include_compensatory, record_id)
         self.a.edits.sort()
-        self.assertEqual(len(self.a.edits.edits),2)
+        self.assertEqual(len(self.a.edits.edits),2) # doesn't have to find these, but does
 
     # def test_discover_frame_shift_edits_3_insertions(self):
     #     orf_coordinates = (93, 219)

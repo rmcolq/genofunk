@@ -244,7 +244,47 @@ def is_extended_cigar_prefix(old_cigar_pairs, new_cigar_pairs):
             return False
     return len(old_cigar_pairs) < len(new_cigar_pairs)
 
-def is_improved_cigar_prefix(old_cigar_pairs, new_cigar_pairs, consider_if_frameshift_added=True):
+def is_improved_cigar_prefix(old_cigar_pairs, new_cigar_pairs, old_cigar_num_matches, new_cigar_num_matches):
+    """
+    Carefully pairwise checks along cigar prefix to first difference
+    and uses that to determine which is better.
+    :param old_cigar_pairs:
+    :param new_cigar_pairs:
+    :return: bool
+    """
+    for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
+        if i >= len(new_cigar_pairs):
+            return False
+        if new_cigar_pairs[i] == old_cigar_pairs[i]:
+            continue
+
+        new_c, new_c_length = new_cigar_pairs[i]
+
+        if new_c == old_c and old_c_length - 1 <= new_c_length <= old_c_length:
+            if new_cigar_num_matches > old_cigar_num_matches:
+                return True
+            elif old_cigar_num_matches > new_cigar_num_matches:
+                return False
+
+        if new_c == old_c and new_c_length < old_c_length:
+            if i + 1 < len(new_cigar_pairs):
+                new_c, new_c_length = new_cigar_pairs[i + 1]
+            else:
+                new_c = None
+        elif new_c == old_c and new_c_length > old_c_length:
+            if i + 1 < len(old_cigar_pairs):
+                old_c, old_c_length = old_cigar_pairs[i + 1]
+            else:
+                old_c = None
+        logging.debug("Comparing %s and %s and found improvement to be %s" %(new_c, old_c,
+                                                                                 case(new_c) > case(old_c)))
+        return case(new_c) > case(old_c)
+
+    if len(new_cigar_pairs) > len(old_cigar_pairs):
+        return True
+    return False
+
+def is_improved_cigar(old_cigar_pairs, new_cigar_pairs, consider_if_frameshift_added=True):
     """
     Checks whether the new cigar is thought to be an improvement over the old one. This is determined by checking if
     the new cigar extends the old one (in which case it is an improvement), whether one has a frame shift and the
@@ -282,37 +322,7 @@ def is_improved_cigar_prefix(old_cigar_pairs, new_cigar_pairs, consider_if_frame
             return True
 
     # Then on prefix comparison
-    for i, (old_c, old_c_length) in enumerate(old_cigar_pairs):
-        if i >= len(new_cigar_pairs):
-            return False
-        if new_cigar_pairs[i] == old_cigar_pairs[i]:
-            continue
-
-        new_c, new_c_length = new_cigar_pairs[i]
-
-        if new_c == old_c and old_c_length - 1 <= new_c_length <= old_c_length:
-            if new_cigar_num_matches > old_cigar_num_matches:
-                return True
-            elif old_cigar_num_matches > new_cigar_num_matches:
-                return False
-
-        if new_c == old_c and new_c_length < old_c_length:
-            if i + 1 < len(new_cigar_pairs):
-                new_c, new_c_length = new_cigar_pairs[i + 1]
-            else:
-                new_c = None
-        elif new_c == old_c and new_c_length > old_c_length:
-            if i + 1 < len(old_cigar_pairs):
-                old_c, old_c_length = old_cigar_pairs[i + 1]
-            else:
-                old_c = None
-        logging.debug("Comparing %s and %s and found improvement to be %s" %(new_c, old_c,
-                                                                                 case(new_c) > case(old_c)))
-        return case(new_c) > case(old_c)
-
-    if len(new_cigar_pairs) > len(old_cigar_pairs):
-        return True
-    return False
+    return is_improved_cigar_prefix(old_cigar_pairs, new_cigar_pairs, old_cigar_num_matches, new_cigar_num_matches)
 
 def is_longer_cigar_prefix(old_cigar_pairs, new_cigar_pairs, max_mismatch):
     """
