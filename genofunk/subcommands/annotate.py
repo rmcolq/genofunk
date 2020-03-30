@@ -26,7 +26,7 @@ def run(options):
     logging.info(msg)
     logging.info(
         "Input parameters:\nReference JSON: %s\nConsensus fasta: %s\nEdit file: %s\nAccession: %s\nStop codons: %s\n"
-        "Min sequence length: %s\nNo stops in middle: %s\nFind compensating frame shifts: %s",
+        "Min sequence length: %s\nNo stops in middle: %s\nDiscover frame shifts: %s\nFind compensating frame shifts: %s",
         options.reference_file,
         options.consensus_file,
         options.edit_file,
@@ -34,6 +34,7 @@ def run(options):
         options.stop_codons,
         options.min_seq_length,
         options.no_stops_in_middle,
+        options.discover_frame_shifts,
         options.find_compensating_frame_shifts
     )
 
@@ -41,4 +42,5 @@ def run(options):
     stop_codons = ",".split(options.stop_codons)
     a.run(options.reference_file, options.consensus_file, options.edit_file, stop_codons=stop_codons, max_mismatch=3,
           include_compensatory=options.find_compensating_frame_shifts, min_seq_length=options.min_seq_length,
+          discover_frame_shifts=options.discover_frame_shifts,
           allow_stop_codons_in_middle = not options.no_stops_in_middle)

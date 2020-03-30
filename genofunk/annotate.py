@@ -74,23 +74,10 @@ class Annotate:
         """
         if len(self.edits.edits) == 0:
             return
-        self.edits.edits.reverse()
+        self.edits.sort(reverse=True, seq_position=True)
         for edit in self.edits.edits:
             record = self.consensus_sequence[edit.sequence_id]
             edit.apply_edit(record)
-
-    def apply_edits_in_range(self, record, coordinates):
-        """
-        Apply the edits to the consensus nucleotide sequences in place (in reverse order to avoid offset errors)
-        :return:
-        """
-        if len(self.edits.edits) == 0:
-            return record
-        logging.debug(self.edits.edits)
-        for edit in self.edits.edits:
-            if edit.sequence_id == record.id and coordinates[0] <= edit.sequence_position < coordinates[-1]:
-                record = edit.apply_edit(record)
-        return record
     
     def load_input_files(self, reference_filepath, consensus_filepath, edit_filepath = ""):
         """
@@ -483,7 +470,8 @@ class Annotate:
         min_frame_shift_position = 0
         candidate_shift_position = self.get_position_for_frame_shift(found_coordinates, record, cigar_pairs,
                                                                     stop_codons, max_mismatch, min_frame_shift_position)
-        while candidate_shift_position is not None and candidate_shift_position < len(ref_sequence):
+        attempt = 0
+        while candidate_shift_position is not None and candidate_shift_position < len(ref_sequence) and attempt < 100:
             logging.debug("Cigar shorter than ref: try a frame shift")
             coordinate_difference, cigar_pairs, updated, record = \
                                                           self.choose_best_frame_shift(feature_coordinates,
@@ -501,11 +489,49 @@ class Annotate:
             min_frame_shift_position = candidate_shift_position
             candidate_shift_position = self.get_position_for_frame_shift(found_coordinates, record, cigar_pairs,
                                                                     stop_codons, max_mismatch, min_frame_shift_position)
+            attempt += 1
             if not updated:
                 break
         logging.debug("Edit list is now: %s" %self.edits)
         self.remove_all_edits(record)
         return coordinate_difference, found_coordinates
+
+    def discover_sequence_edits(self, feature_coordinates, found_coordinates, stop_codons, max_mismatch, record_id=0):
+        """
+        Find positions where there is a sequence mismatch and store them, assuming reference is correct. When combined
+        with information during the merge step, will result in a list of edits which are unique to this sequence.
+        :param feature_coordinates: coordinates of features in reference sequence
+        :param found_coordinates: corresponding coordinates for features in query sequence
+        :param record_id:
+        :return: pairwise alignment with frame shifts added
+        """
+        ref_sequence, feature_coordinates = self.get_reference_sequence(feature_coordinates, amino_acid=False)
+        query_sequence, found_coordinates = self.get_query_sequence(found_coordinates, amino_acid=False)
+        result = pairwise_nw_trace_align(ref_sequence, query_sequence)
+        cigar_pairs = parse_cigar_pairs(result)
+
+        record = self.consensus_sequence[record_id]
+        min_edit_position = 0
+        candidate_edit_position, ref_position, candidate_length = get_position_next_short_mismatch_in_cigar(pairs,
+                                                                                                    max_mismatch,
+                                                                                                    min_edit_position)
+        attempt = 0
+        while candidate_edit_position < len(ref_sequence) and attempt < 100:
+            logging.debug("Found edit at position %i" %candidate_edit_position)
+            shift_from = query_sequence[candidate_edit_position:candidate_edit_position + candidate_length + 1]
+            shift_to = ref_sequence[ref_position:ref_position + candidate_length + 1]
+            e = Edit(record_id, found_coordinates[0] + candidate_edit_position, shift_from, shift_to,
+                     self.closest_accession,
+                     feature_coordinates[0] + ref_position)
+            if "N" not in shift_from:
+                self.edits.add_edit(e)
+            min_edit_position = candidate_edit_position
+            candidate_edit_position, ref_position, candidate_length = get_position_next_short_mismatch_in_cigar(pairs,
+                                                                                                    max_mismatch,
+                                                                                                    min_edit_position)
+            attempt += 1
+
+        logging.debug("Edit list is now: %s" %self.edits)
 
     def save_found_coordinates(self, filepath, write_format='a'):
         with open(filepath,write_format) as f:
@@ -536,7 +562,7 @@ class Annotate:
             all_query_coordinates.append(pair['start'])
             all_query_coordinates.append(pair['end'])
         record = self.consensus_sequence[record_id]
-        record = self.apply_edits_in_range(record, all_query_coordinates)
+        record,coordinate_difference = apply_edits_in_range(self.edits, record, coordinates=all_query_coordinates)
 
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=all_query_coordinates)
 
@@ -550,7 +576,8 @@ class Annotate:
         self.remove_all_edits(record)
 
     def run(self, reference_info_filepath, consensus_sequence_filepath, edit_filepath="", stop_codons=["*"],
-            max_mismatch=3, include_compensatory=False, min_seq_length=28000, allow_stop_codons_in_middle=True):
+            max_mismatch=3, include_compensatory=False, min_seq_length=28000, discover_frame_shifts=False,
+            allow_stop_codons_in_middle=True):
         self.load_input_files(reference_info_filepath, consensus_sequence_filepath, edit_filepath)
         logging.info("Found features: %s " %self.reference_info["references"][self.closest_accession]["locations"])
 
@@ -575,10 +602,13 @@ class Annotate:
                         self.problematic.add(record_id)
                         continue
                     logging.debug("Identified features coordinates %s" % str_coordinates(query_coordinates))
-                    coordinate_difference, query_coordinates = self.discover_frame_shift_edits(coordinates, query_coordinates,
-                                                                            stop_codons, max_mismatch, include_compensatory, record_id=record_id)
-                    logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
-                    logging.debug("Check features coordinates %s" % str_coordinates(query_coordinates))
+
+                    if discover_frame_shifts:
+                        coordinate_difference, query_coordinates = self.discover_frame_shift_edits(coordinates, query_coordinates,
+                                                                                stop_codons, max_mismatch, include_compensatory, record_id=record_id)
+                        logging.info("Total number of discovered edits is %d" %len(self.edits.edits))
+                        logging.debug("Check features coordinates %s" % str_coordinates(query_coordinates))
+
                     query_coordinate_pairs.append({'start': query_coordinates[0], 'end': query_coordinates[1] + coordinate_difference})
 
                 self.check_have_open_reading_frame_query(record_id, query_coordinate_pairs, allow_stop_codons_in_middle)

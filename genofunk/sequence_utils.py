@@ -26,6 +26,21 @@ def get_coordinates_from_json(json_entry, pairs=True):
             coordinates.append(json_entry['end'])
     return coordinates
 
+def apply_edits_in_range(editfile, record, coordinates=None, filter_by_accepted=True):
+    """
+    Apply the edits to the consensus nucleotide sequences in place (in reverse order to avoid offset errors)
+    :return:
+    """
+    coordinate_difference = 0
+    if len(editfile.edits) == 0:
+        return record
+    for edit in editfile.edits:
+        if edit.sequence_id == record.id and \
+                (coordinates is None or coordinates[0] <= edit.sequence_position < coordinates[-1]):
+            record = edit.apply_edit(record, filter_by_accepted=filter_by_accepted)
+            coordinate_difference += len(edit.edit_to) - len(edit.edit_from)
+    return record, coordinate_difference
+
 def make_sequence_length_divide_by_3(sequence):
     if len(sequence) % 3 == 1:
         sequence = sequence + "NN"

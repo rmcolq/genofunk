@@ -104,13 +104,35 @@ def get_position_next_indel_in_cigar(pairs, min_position=0):
     """
     total = 0
     for c,i in pairs:
-        if total + i < min_position:
-            total += i
-        elif c in ["I", "D"]:
+        if total > min_position and c in ["I", "D"]:
             return total
-        else:
+        elif c in ["=", "X", "M"]:
+            total += i
+        elif c in ["I"]:
             total += i
     return total
+
+def get_position_next_short_mismatch_in_cigar(pairs, max_mismatch, min_position=0):
+    """
+    Get the position of first mismatch base in cigar for mismatch regions less than max_mismatch in length
+    :param pairs:
+    :param max_mismatch:
+    :min_position:
+    :return: position_in_query, position_in_ref, length
+    """
+    q_total = 0
+    r_total = 0
+    for c,i in pairs:
+        if q_total > min_position and c in ["X"] and i < max_mismatch:
+            return q_total, r_total, i
+        elif c in ["=", "X", "M"]:
+            q_total += i
+            r_total += i
+        elif c in ["I"]:
+            q_total += i
+        elif c in ["D", "N"]:
+            r_total += i
+    return q_total, r_total, None
 
 def get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch, n_runs=[], min_match=3, min_position=0):
     """
@@ -150,7 +172,7 @@ def get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch, n_runs=[]
             subtotal += i
         elif c in ["X"] and i <= max_mismatch and found_n_run and have_min_match_after_n_run:
             subtotal += i
-        else:
+        elif c in ["X"]:
             found_n_run = False
             for run in n_runs:
                 if run[0] <= total + subtotal <= run[1]:
@@ -160,6 +182,8 @@ def get_position_first_indel_or_mismatch_in_cigar(pairs, max_mismatch, n_runs=[]
                     break
             if not found_n_run:
                 break
+        else:
+            break
     logging.debug("Return total %i" %total)
     return total
 

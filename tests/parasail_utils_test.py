@@ -52,7 +52,7 @@ class TestParasailUtils(unittest.TestCase):
         self.assertEqual(expected, cigar_length)
 
     def test_cigar_length_n_runs(self):
-        ref_seq = "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
+        ref_seq =   "atgcccaagctgaatagcgtagaggggttttcatcatttgaggacgatgtataa"
         query_seq = "atgcccaaccNNNNNaccgtagagggttttcaacatttgaggaccgatgtataa"
         result = pairwise_nw_trace_align(ref_seq, query_seq)
         pairs = parse_cigar_pairs(result)

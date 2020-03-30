@@ -129,17 +129,6 @@ class Apply():
 
         self.load_edits_in_range(edit_filepath, features_list=features_list)
 
-    def apply_loaded_edits(self, filter_by_accepted=True):
-        """
-        Apply the edits to the consensus nucleotide sequences in place (assumes reverse order to avoid offset errors)
-        :return:
-        """
-        if not self.edits or len(self.edits.edits) == 0:
-            return
-        for edit in self.edits.edits:
-            record = self.consensus_sequence[edit.sequence_id]
-            edit.apply_edit(record, filter_by_accepted=filter_by_accepted)
-
     def save_updated_consensuses(self, filepath=None, features=None, concat=False, amino_acid=False):
         """
         Save new consensus sequences with edits applied to file, restricting to a feature or translating as required
@@ -196,7 +185,6 @@ class Apply():
         self.load_input_files(directory, edit_filepath, features_list=features_list)
         if concat and features_list is None:
             features_list = self.coordinates.keys()
-        self.apply_loaded_edits()
 
         if features_list and not concat:
             for feature in features_list:

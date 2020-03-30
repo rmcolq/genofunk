@@ -83,6 +83,12 @@ def main(args=None):
         help="Check that features have no stop codons in the middle once edits have been discovered"
     )
     subparser_annotate.add_argument(
+        "--discover_frame_shifts",
+        dest="discover_frame_shifts",
+        action="store_true",
+        help="Discover frame shifts"
+    )
+    subparser_annotate.add_argument(
         "--find_compensating_frame_shifts",
         dest="find_compensating_frame_shifts",
         action="store_true",
