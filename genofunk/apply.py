@@ -129,6 +129,47 @@ class Apply():
 
         self.load_edits_in_range(edit_filepath, features_list=features_list)
 
+    def apply_loaded_edits(self, features=None, filter_by_accepted=True):
+        """
+        Apply the edits to the consensus nucleotide sequences in place (assumes reverse order to avoid offset errors)
+        :return:
+        """
+        if not self.edits or len(self.edits.edits) == 0:
+            return
+
+        assert self.coordinates is not None
+
+        self.edits.sort(reverse=False, seq_position=True)
+
+        for seq_name in self.consensus_sequence:
+            logging.debug(seq_name)
+            coordinate_difference = 0
+            if features is None:
+                self.consensus_sequence[seq_name], coordinate_difference = apply_edits_in_range(self.edits,
+                                                                                self.consensus_sequence[seq_name],
+                                                                                offset=coordinate_difference,
+                                                                                coordinates=None,
+                                                                                filter_by_accepted=filter_by_accepted)
+                continue
+            for feature in features:
+                logging.debug(feature)
+                if seq_name not in self.coordinates[feature]:
+                    continue
+                coordinate_pairs = get_coordinates_from_json(self.coordinates[feature][seq_name], pairs=True)
+                logging.debug("%i %s" %(coordinate_difference, str_coordinates(coordinate_pairs)))
+                updated_coordinates = []
+                for pair in coordinate_pairs:
+                    coordinates = [pair[0] + coordinate_difference, pair[1] + coordinate_difference]
+                    self.consensus_sequence[seq_name], new_coordinate_difference = apply_edits_in_range(self.edits,
+                                                                                self.consensus_sequence[seq_name],
+                                                                                offset=coordinate_difference,
+                                                                                coordinates=coordinates,
+                                                                                filter_by_accepted=filter_by_accepted)
+                    updated_coordinates.append(
+                        {'start': coordinates[0], 'end': coordinates[1] + new_coordinate_difference})
+                    logging.debug("coordinate_difference was %i and is being incremented by %i" %(coordinate_difference, new_coordinate_difference))
+                    coordinate_difference += new_coordinate_difference
+
     def save_updated_consensuses(self, filepath=None, features=None, concat=False, amino_acid=False):
         """
         Save new consensus sequences with edits applied to file, restricting to a feature or translating as required
@@ -185,6 +226,7 @@ class Apply():
         self.load_input_files(directory, edit_filepath, features_list=features_list)
         if concat and features_list is None:
             features_list = self.coordinates.keys()
+        self.apply_loaded_edits(features=features_list)
 
         if features_list and not concat:
             for feature in features_list:

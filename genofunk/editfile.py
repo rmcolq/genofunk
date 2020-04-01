@@ -68,11 +68,12 @@ class Edit():
         :param offset: account for previously applied edits earlier in the sequence which
         :return:
         """
+        logging.debug(self)
         if self.edit_applied:
-            return
+            return record, False
 
         if filter_by_accepted and not self.edit_accepted:
-            return
+            return record, False
 
         logging.debug(record.id)
         sequence = record.seq
@@ -98,7 +99,7 @@ class Edit():
         #logging.debug("Applying edit changes")
         #logging.debug("Old: %s" %sequence)
         #logging.debug("New: %s" %updated_sequence)
-        return record
+        return record, True
         
     def remove_edit(self, record):
         """

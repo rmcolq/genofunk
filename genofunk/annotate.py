@@ -349,8 +349,10 @@ class Annotate:
         old_query_sequence, coordinates = self.get_query_sequence(record, coordinates=found_coordinates)
         e = Edit(record_name, found_coordinates[0] + 3 * (shift_position), shift_from, shift_to, self.closest_accession,
                  feature_coordinates[0] + 3 * (shift_position))
-        record = e.apply_edit(record, coordinate_difference)
-        updated_coordinate_difference = coordinate_difference + len(shift_to) - len(shift_from)
+        record, applied = e.apply_edit(record, coordinate_difference)
+        updated_coordinate_difference = coordinate_difference
+        if applied:
+            updated_coordinate_difference += len(shift_to) - len(shift_from)
         updated_found_coordinates = [found_coordinates[0], found_coordinates[1] + updated_coordinate_difference]
         query_sequence, coordinates = self.get_query_sequence(record, coordinates=updated_found_coordinates)
         logging.debug("Found query sequence %s and coordinates %s" %(query_sequence, coordinates))
@@ -411,7 +413,7 @@ class Annotate:
 
         updated_coordinate_difference, cigar_pairs, updated, edit = frame_shift_results[best]
         logging.debug("Found updated coordinate difference %d" %updated_coordinate_difference)
-        record = edit.apply_edit(record, coordinate_difference)
+        record, applied = edit.apply_edit(record, coordinate_difference)
         self.edits.add_edit(edit)
 
         return updated_coordinate_difference, cigar_pairs, updated, record

@@ -5,6 +5,7 @@ import json
 
 from genofunk import apply
 from genofunk import editfile
+from genofunk.sequence_utils import *
 
 EditFile = editfile.EditFile
 Edit = editfile.Edit
