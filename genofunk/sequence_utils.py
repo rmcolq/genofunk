@@ -60,14 +60,14 @@ def count_stops(sequence, stop_codon="*"):
 
 def find_run_n( sequence, min_run_length=9):
     i = sequence.find("N")
-    j = 0
-    while i >= 0:
+    j = i + 1
+    while i >= 0 and j < len(sequence):
         for j in range(i + 1, len(sequence)):
             if sequence[j] != "N":
                 break
         if j - 1 - i >= min_run_length:
             return i,j
-        i = sequence.find("N", j)
+        i = sequence.find("N", j+1)
     return -1, -1
 
 def rfind_run_n( sequence, min_run_length=9):

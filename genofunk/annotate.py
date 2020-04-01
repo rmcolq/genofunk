@@ -596,6 +596,7 @@ class Annotate:
                 self.check_have_open_reading_frame_ref(feature_coordinate_pairs)
 
                 query_coordinate_pairs = []
+                coordinate_difference = 0
                 for coordinates in feature_coordinate_pairs:
                     query_coordinates = self.identify_feature_coordinates(feature_coordinates=coordinates,
                                                                                record_id=record_id)
